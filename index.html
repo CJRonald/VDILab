@@ -314,6 +314,28 @@
     @media (max-width: 768px) {
       .nav-menu {
         display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background-color: var(--primary-color);
+        flex-direction: column;
+        padding: 1rem 0;
+        box-shadow: var(--shadow);
+      }
+
+      .nav-menu.active {
+        display: flex;
+      }
+
+      .nav-menu li {
+        margin: 0;
+        padding: 0.5rem 2rem;
+      }
+
+      .nav-menu a {
+        display: block;
+        padding: 0.5rem 0;
       }
 
       .mobile-menu-btn {
@@ -330,6 +352,18 @@
 
       .container {
         padding: 0 1rem;
+      }
+
+      .research-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .team-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+
+      .contact-info {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -519,6 +553,28 @@
   </footer>
 
   <script>
+    // 手機版選單切換
+    const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+    const navMenu = document.querySelector('.nav-menu');
+
+    mobileMenuBtn.addEventListener('click', function() {
+      navMenu.classList.toggle('active');
+    });
+
+    // 點擊選單項目後關閉選單
+    document.querySelectorAll('.nav-menu a').forEach(link => {
+      link.addEventListener('click', function() {
+        navMenu.classList.remove('active');
+      });
+    });
+
+    // 點擊外部區域關閉選單
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.navbar')) {
+        navMenu.classList.remove('active');
+      }
+    });
+
     // 平滑滾動
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e) {

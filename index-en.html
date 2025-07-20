@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     :root {
-      --primary-color: #3ea35b;
+      --primary-color: #3C5148;
       --primary-dark: #2d7a44;
       --secondary-color: #f8f9fa;
       --text-color: #333;
@@ -39,7 +39,7 @@
 
     /* Navigation */
     .navbar {
-      background-color: var(--primary-color);
+      background: linear-gradient(90deg, #1B2727 0%, #3C5148 25%, #6B8E4E 50%, #B2C5B2 75%, #D5DDDF 100%);
       padding: 1rem 0;
       position: fixed;
       top: 0;
@@ -137,7 +137,7 @@
 
     /* Hero Section */
     .hero {
-      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      background: linear-gradient(90deg, #1B2727 0%, #3C5148 25%, #6B8E4E 50%, #B2C5B2 75%, #D5DDDF 100%);
       color: white;
       text-align: center;
       padding: 8rem 0;
@@ -287,7 +287,7 @@
     }
 
     .footer-section h3 {
-      color: var(--primary-color);
+      color: #B2C5B2;
       margin-bottom: 1rem;
     }
 
@@ -604,11 +604,7 @@
     // Navbar scroll effect
     window.addEventListener('scroll', function() {
       const navbar = document.querySelector('.navbar');
-      if (window.scrollY > 100) {
-        navbar.style.backgroundColor = 'rgba(62, 163, 91, 0.95)';
-      } else {
-        navbar.style.backgroundColor = '#3ea35b';
-      }
+      navbar.style.background = 'linear-gradient(90deg, #1B2727 0%, #3C5148 25%, #6B8E4E 50%, #B2C5B2 75%, #D5DDDF 100%)';
     });
   </script>
 </body>

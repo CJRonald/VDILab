@@ -34,10 +34,10 @@ cgmh-burn-ai-lab/
 
 ## 聯絡資訊
 
-- **Email**: cgmh.burncenter@gmail.com
+- **Email**: <research@cgmhburncenter.org>
 - **電話**: +886-3-328-1200 轉 8123
 - **地址**: 桃園市龜山區復興街5號 林口長庚醫院燒燙傷中心
 
 ## 授權
 
-© 2025 CGMH Burn Center VDI Lab. All rights reserved.
+© 2025–2026 CGMH Burn Center VDI Lab. All rights reserved.

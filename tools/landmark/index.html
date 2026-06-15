@@ -101,12 +101,19 @@
     <div class="landmarks" id="landmark-list"></div>
     <div id="def-box"><span id="def-pt">—</span><span id="def-text">點選左側 landmark 看定義</span></div>
     <div id="angles">
-      <h2>📐 即時量測（角度可量、長度為 ratio）</h2>
-      <div class="ang-row"><span class="lbl">NFA <small>nasofrontal</small></span><span class="v na" id="a-nfa">—</span></div>
-      <div class="ang-row"><span class="lbl">Dorsal slope <small>nasion→pronasale vs vert</small></span><span class="v na" id="a-slope">—</span></div>
-      <div class="ang-row"><span class="lbl">Dorsal curvature <small>nas-rhi-pro</small></span><span class="v na" id="a-curv">—</span></div>
-      <div class="ang-row"><span class="lbl">NLA <small>nasolabial</small></span><span class="v na" id="a-nla">—</span></div>
-      <div class="ang-row"><span class="lbl">Goode ratio <small>~0.55-0.6</small></span><span class="v na" id="a-goode">—</span></div>
+      <h2 id="ang-title">📐 即時量測（角度可量、長度為 ratio）</h2>
+      <div id="ang-lateral">
+        <div class="ang-row"><span class="lbl">NFA <small>nasofrontal</small></span><span class="v na" id="a-nfa">—</span></div>
+        <div class="ang-row"><span class="lbl">Dorsal slope <small>nasion→pronasale vs vert</small></span><span class="v na" id="a-slope">—</span></div>
+        <div class="ang-row"><span class="lbl">Dorsal curvature <small>nas-rhi-pro</small></span><span class="v na" id="a-curv">—</span></div>
+        <div class="ang-row"><span class="lbl">NLA <small>nasolabial</small></span><span class="v na" id="a-nla">—</span></div>
+        <div class="ang-row"><span class="lbl">Goode ratio <small>~0.55-0.6</small></span><span class="v na" id="a-goode">—</span></div>
+      </div>
+      <div id="ang-ap">
+        <div class="ang-row"><span class="lbl">DAL 對稱 <small>alare R-L 高低差 px</small></span><span class="v na" id="a-dal">—</span></div>
+        <div class="ang-row"><span class="lbl">Alar base 對稱 <small>base R-L 高低差 px</small></span><span class="v na" id="a-basesym">—</span></div>
+        <div class="ang-row"><span class="lbl">AlarBase/IPD <small>鼻翼寬標準化</small></span><span class="v na" id="a-baseipd">—</span></div>
+      </div>
     </div>
     <div class="nav">
       <button id="n-prev">← 上一張</button>
@@ -326,18 +333,32 @@ function angle3(A,B,C){ // angle at B
   if(!m1||!m2)return null;return Math.acos(Math.max(-1,Math.min(1,dot/(m1*m2))))*180/Math.PI;}
 function angleVert(A,B){ // angle of line A→B from vertical
   const dx=B.x-A.x,dy=B.y-A.y;return Math.abs(Math.atan2(dx,dy)*180/Math.PI);}
+function isLateralView(v){return v==='lateral_L'||v==='lateral_R'||v==='oblique_L'||v==='oblique_R';}
 function renderAngles(){
   const a=state.annotations[state.photos[state.current]?.name];if(!a)return;
   const set=(id,val,unit)=>{const e=$(id);if(val==null){e.textContent='—';e.classList.add('na');}
-    else{e.textContent=val.toFixed(1)+(unit||'°');e.classList.remove('na');}};
+    else{e.textContent=val.toFixed(1)+(unit===undefined?'°':unit);e.classList.remove('na');}};
+  // 依 view 只顯示該算的角度區塊（避免在錯 view 算出無意義數值）
+  const lat=isLateralView(a.view), ap=(a.view==='AP');
+  $('ang-lateral').style.display=lat?'block':'none';
+  $('ang-ap').style.display=ap?'block':'none';
+  $('ang-title').textContent=lat?'📐 側面量測（lateral）':ap?'📐 正面量測（AP）':'📐 量測（view 未定，手動選 view）';
   const gla=getPt(a,'glabella'),nas=getPt(a,'nasion'),pro=getPt(a,'pronasale'),
-    sub=getPt(a,'subnasale'),lab=getPt(a,'labiale_superius'),rhi=getPt(a,'rhinion');
-  set('a-nfa', (gla&&nas&&pro)?angle3(gla,nas,pro):null);
-  set('a-slope',(nas&&pro)?angleVert(nas,pro):null);
-  set('a-curv',(nas&&rhi&&pro)?angle3(nas,rhi,pro):null);
-  set('a-nla', (pro&&sub&&lab)?angle3(pro,sub,lab):null);
-  const goode=(nas&&pro&&sub)?(Math.hypot(nas.x-pro.x,nas.y-pro.y)/Math.hypot(pro.x-sub.x,pro.y-sub.y)):null;
-  set('a-goode',goode,'');}
+    sub=getPt(a,'subnasale'),lab=getPt(a,'labiale_superius'),rhi=getPt(a,'rhinion'),
+    alR=getPt(a,'alare_r'),alL=getPt(a,'alare_l'),baR=getPt(a,'alar_base_r'),baL=getPt(a,'alar_base_l'),
+    puR=getPt(a,'pupil_r'),puL=getPt(a,'pupil_l');
+  if(lat){
+    set('a-nfa', (gla&&nas&&pro)?angle3(gla,nas,pro):null);
+    set('a-slope',(nas&&pro)?angleVert(nas,pro):null);
+    set('a-curv',(nas&&rhi&&pro)?angle3(nas,rhi,pro):null);
+    set('a-nla', (pro&&sub&&lab)?angle3(pro,sub,lab):null);
+    set('a-goode',(nas&&pro&&sub)?(Math.hypot(nas.x-pro.x,nas.y-pro.y)/Math.hypot(pro.x-sub.x,pro.y-sub.y)):null,'');
+  } else if(ap){
+    set('a-dal',(alR&&alL)?Math.abs(alR.y-alL.y):null,' px');
+    set('a-basesym',(baR&&baL)?Math.abs(baR.y-baL.y):null,' px');
+    const ipd=(puR&&puL)?Math.hypot(puR.x-puL.x,puR.y-puL.y):null;
+    set('a-baseipd',(baR&&baL&&ipd)?(Math.hypot(baR.x-baL.x,baR.y-baL.y)/ipd):null,'');
+  }}
 
 function renderAll(){renderList();applyT();renderAngles();}
 
@@ -402,17 +423,24 @@ $('n-export-json').onclick=()=>{
   download('landmarks_'+state.raterId+'_v1.1.json',JSON.stringify(out,null,2),'application/json');};
 $('n-export-csv').onclick=()=>{
   // CSV 帶 rater_id（inter/intra-rater：多 rater 檔合併後依 photo×rater 算 ICC/κ）
-  const rows=[['rater_id','photo','view','NFA_deg','dorsal_slope_deg','dorsal_curvature_deg','NLA_deg','Goode_ratio']];
+  // 依 view 填對應欄；非該 view 的指標留空（避免錯 view 數值污染分析）
+  const rows=[['rater_id','photo','view','NFA_deg','dorsal_slope_deg','dorsal_curvature_deg','NLA_deg','Goode_ratio','DAL_sym_px','alarbase_sym_px','alarbase_IPD_ratio']];
   for(const[name,a]of Object.entries(state.annotations)){
     const g=k=>{const lm=a.landmarks[k];return(lm&&lm.vis>=0.5)?lm:null;};
-    const gla=g('glabella'),nas=g('nasion'),pro=g('pronasale'),sub=g('subnasale'),lab=g('labiale_superius'),rhi=g('rhinion');
+    const gla=g('glabella'),nas=g('nasion'),pro=g('pronasale'),sub=g('subnasale'),lab=g('labiale_superius'),rhi=g('rhinion'),
+      alR=g('alare_r'),alL=g('alare_l'),baR=g('alar_base_r'),baL=g('alar_base_l'),puR=g('pupil_r'),puL=g('pupil_l');
     const f=v=>v==null?'':v.toFixed(2);
+    const lat=isLateralView(a.view), ap=(a.view==='AP');
+    const ipd=(puR&&puL)?Math.hypot(puR.x-puL.x,puR.y-puL.y):null;
     rows.push([state.raterId,name,a.view,
-      f((gla&&nas&&pro)?angle3(gla,nas,pro):null),
-      f((nas&&pro)?angleVert(nas,pro):null),
-      f((nas&&rhi&&pro)?angle3(nas,rhi,pro):null),
-      f((pro&&sub&&lab)?angle3(pro,sub,lab):null),
-      f((nas&&pro&&sub)?(Math.hypot(nas.x-pro.x,nas.y-pro.y)/Math.hypot(pro.x-sub.x,pro.y-sub.y)):null)]);}
+      f(lat&&gla&&nas&&pro?angle3(gla,nas,pro):null),
+      f(lat&&nas&&pro?angleVert(nas,pro):null),
+      f(lat&&nas&&rhi&&pro?angle3(nas,rhi,pro):null),
+      f(lat&&pro&&sub&&lab?angle3(pro,sub,lab):null),
+      f(lat&&nas&&pro&&sub?(Math.hypot(nas.x-pro.x,nas.y-pro.y)/Math.hypot(pro.x-sub.x,pro.y-sub.y)):null),
+      f(ap&&alR&&alL?Math.abs(alR.y-alL.y):null),
+      f(ap&&baR&&baL?Math.abs(baR.y-baL.y):null),
+      f(ap&&baR&&baL&&ipd?(Math.hypot(baR.x-baL.x,baR.y-baL.y)/ipd):null)]);}
   download('measurements_'+state.raterId+'.csv',rows.map(r=>r.join(',')).join('\n'),'text/csv');};
 
 window.addEventListener('resize',()=>{if(state.current>=0)applyT();});

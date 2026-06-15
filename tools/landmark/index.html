@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>SlopeSpreader Landmark + 量測 — pilot</title>
+<style>
+  :root{--bg:#1a1a1a;--panel:#252525;--panel2:#2f2f2f;--text:#e0e0e0;--muted:#888;
+    --accent:#4a9eff;--border:#383838;--ok:#4caf50;--warn:#ffa726;--ang:#ffd166;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+    height:100vh;overflow:hidden;user-select:none;}
+  #app{display:grid;grid-template-columns:1fr 340px;height:100vh;}
+  #stage{position:relative;background:#0a0a0a;overflow:hidden;cursor:crosshair;}
+  #stage.panning{cursor:grab;} #stage.panning.active{cursor:grabbing;}
+  #canvas{position:absolute;top:0;left:0;transform-origin:0 0;image-rendering:-webkit-optimize-contrast;}
+  .dot{position:absolute;border-radius:50%;border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,.8);
+    transform:translate(-50%,-50%);cursor:pointer;z-index:10;}
+  .dot.invisible{opacity:.35;} .dot.vis-0{opacity:.2;border-style:dashed;}
+  svg#overlay{position:absolute;top:0;left:0;pointer-events:none;z-index:8;}
+  #hud{position:absolute;top:10px;left:10px;z-index:30;font-size:12px;background:rgba(0,0,0,.7);
+    padding:6px 10px;border-radius:4px;line-height:1.6;}
+  #hud strong{color:var(--accent);}
+  .help-key{font-family:ui-monospace,monospace;background:var(--border);padding:1px 5px;border-radius:3px;font-size:10px;}
+  #minimap{position:absolute;right:10px;bottom:10px;width:180px;height:180px;background:#000;
+    border:1px solid var(--border);overflow:hidden;z-index:20;opacity:.85;}
+  #minimap img{width:100%;height:100%;object-fit:contain;}
+  #minimap .vp{position:absolute;border:2px solid var(--accent);pointer-events:none;}
+  #panel{background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+  #panel header{padding:12px 14px;background:var(--panel2);border-bottom:1px solid var(--border);}
+  #panel header h1{font-size:14px;font-weight:600;} #panel header .sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .photo-info{padding:8px 14px;font-size:12px;border-bottom:1px solid var(--border);line-height:1.7;}
+  .photo-info .row{display:flex;justify-content:space-between;} .photo-info .row span:first-child{color:var(--muted);}
+  .toolbar{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--border);}
+  .toolbar button,.nav button{background:var(--panel2);color:var(--text);border:1px solid var(--border);
+    border-radius:5px;padding:5px 9px;font-size:12px;cursor:pointer;}
+  .toolbar button:hover,.nav button:hover{background:var(--border);}
+  .landmarks{flex:1;overflow-y:auto;padding:6px 0;}
+  .landmark-row{display:grid;grid-template-columns:22px 1fr 54px;gap:6px;padding:5px 14px;font-size:12px;
+    align-items:center;cursor:pointer;border-left:3px solid transparent;}
+  .landmark-row:hover{background:var(--panel2);} .landmark-row.active{background:var(--panel2);border-left-color:var(--accent);}
+  .landmark-row.pending .name{color:var(--muted);} .landmark-row.vis-low{opacity:.6;}
+  .swatch{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+  .zh{color:var(--muted);font-size:10px;} .idx{color:var(--muted);text-align:right;} .vis{color:var(--muted);text-align:right;}
+  #def-box{padding:8px 14px;background:#1e1e1e;border-top:1px solid var(--border);font-size:11px;line-height:1.5;min-height:48px;}
+  #def-box #def-pt{display:block;color:var(--accent);font-weight:600;margin-bottom:2px;}
+  #def-box #def-text{color:var(--muted);}
+  #angles{border-top:1px solid var(--border);padding:10px 14px;background:#202020;}
+  #angles h2{font-size:12px;color:var(--ang);margin-bottom:6px;}
+  .ang-row{display:flex;justify-content:space-between;font-size:12px;padding:2px 0;}
+  .ang-row .v{font-family:ui-monospace,monospace;color:var(--ang);} .ang-row .v.na{color:var(--muted);}
+  .ang-row .lbl{color:var(--text);} .ang-row .lbl small{color:var(--muted);}
+  .nav{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 14px;border-top:1px solid var(--border);}
+  .nav button.wide{grid-column:span 2;background:var(--accent);color:#fff;border:none;font-weight:600;}
+  #picker{position:absolute;inset:0;background:rgba(0,0,0,.92);z-index:100;display:flex;align-items:center;justify-content:center;}
+  #picker .box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:24px;max-width:560px;}
+  #picker h2{font-size:16px;margin-bottom:8px;} #picker p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px;}
+  #picker code{background:var(--border);padding:1px 6px;border-radius:3px;font-size:12px;}
+  #file-list{max-height:200px;overflow-y:auto;margin:12px 0;font-size:12px;}
+  .file-row{padding:3px 0;color:var(--muted);} .view-tag{color:var(--accent);}
+  #drop-zone{border:2px dashed var(--border);border-radius:8px;padding:22px;text-align:center;color:var(--muted);
+    font-size:13px;margin-bottom:12px;transition:.15s;line-height:1.6;}
+  #drop-zone.over{border-color:var(--accent);background:rgba(74,158,255,.08);color:var(--text);}
+  .pick-btns{display:flex;gap:10px;margin-bottom:6px;}
+  .pick-btn{flex:1;text-align:center;background:var(--panel2);border:1px solid var(--border);border-radius:6px;
+    padding:9px;font-size:12px;cursor:pointer;line-height:1.4;} .pick-btn:hover{background:var(--border);}
+  #vis-popup{position:fixed;background:var(--panel2);border:1px solid var(--border);border-radius:6px;
+    padding:6px;z-index:200;display:none;box-shadow:0 4px 16px rgba(0,0,0,.6);}
+  #vis-popup.show{display:block;} #vis-popup .nm{font-size:11px;color:var(--muted);margin-bottom:4px;padding:0 4px;}
+  #vis-popup button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--text);
+    padding:4px 10px;font-size:12px;cursor:pointer;border-radius:4px;} #vis-popup button:hover{background:var(--accent);color:#fff;}
+  #vis-popup button.selected{background:var(--border);}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="canvas"></canvas>
+    <svg id="overlay"></svg>
+    <div id="hud"><span id="hud-line"></span><br><span id="hud-help"></span></div>
+    <div id="minimap"><img id="minimap-img" alt=""><div class="vp" id="minimap-vp"></div></div>
+  </div>
+  <div id="panel">
+    <header>
+      <h1>SlopeSpreader 量測 + Landmark</h1>
+      <div class="sub">schema v1.1 (17pt) · pilot SS01-08 · 角度即時</div>
+    </header>
+    <div class="photo-info">
+      <div class="row"><span>Photo</span><span id="i-name">—</span></div>
+      <div class="row"><span>View</span><span id="i-view">—</span></div>
+      <div class="row"><span>Progress</span><span id="i-prog">0/17</span></div>
+    </div>
+    <div class="toolbar">
+      <button id="t-rot-l">⟲ 90°</button>
+      <button id="t-rot-r">⟳ 90°</button>
+      <button id="t-rot-fine">微調 +1°</button>
+      <button id="t-rot-reset">轉正歸零</button>
+      <button id="t-fit">符合視窗</button>
+    </div>
+    <div class="landmarks" id="landmark-list"></div>
+    <div id="def-box"><span id="def-pt">—</span><span id="def-text">點選左側 landmark 看定義</span></div>
+    <div id="angles">
+      <h2>📐 即時量測（角度可量、長度為 ratio）</h2>
+      <div class="ang-row"><span class="lbl">NFA <small>nasofrontal</small></span><span class="v na" id="a-nfa">—</span></div>
+      <div class="ang-row"><span class="lbl">Dorsal slope <small>nasion→pronasale vs vert</small></span><span class="v na" id="a-slope">—</span></div>
+      <div class="ang-row"><span class="lbl">Dorsal curvature <small>nas-rhi-pro</small></span><span class="v na" id="a-curv">—</span></div>
+      <div class="ang-row"><span class="lbl">NLA <small>nasolabial</small></span><span class="v na" id="a-nla">—</span></div>
+      <div class="ang-row"><span class="lbl">Goode ratio <small>~0.55-0.6</small></span><span class="v na" id="a-goode">—</span></div>
+    </div>
+    <div class="nav">
+      <button id="n-prev">← 上一張</button>
+      <button id="n-next">下一張 →</button>
+      <button id="n-save" class="wide">儲存本張 + 下一張 (Enter)</button>
+      <button id="n-export-json">Export JSON (SimAI 格式)</button>
+      <button id="n-export-csv">Export 量測 CSV</button>
+    </div>
+  </div>
+</div>
+
+<div id="picker"><div class="box">
+  <h2>載入照片</h2>
+  <p style="margin-bottom:8px;"><b>Rater ID</b>（你的標註者代號，用於 inter/intra-rater；不同 rater 各自不互蓋）：</p>
+  <input type="text" id="rater-id" placeholder="例：ronald / hsiao / yen / ronald_r2" style="width:100%;padding:7px 9px;margin-bottom:14px;background:var(--panel2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:13px;">
+  <p>三種載入方式（可一次帶全部 case）。檔名前綴 <code>AP_</code> / <code>lateral_L_</code> / <code>lateral_R_</code> 自動辨識 view；無前綴則手動切。<br>
+  <b>照片只在你本機處理、永不上傳。</b></p>
+  <div id="drop-zone">📁 拖曳照片 / 資料夾到這裡<br><small>或用下方按鈕</small></div>
+  <div class="pick-btns">
+    <label class="pick-btn">📂 選整個資料夾（含子資料夾）
+      <input type="file" id="dir-input" webkitdirectory directory multiple accept="image/*" hidden></label>
+    <label class="pick-btn">🖼 選多個檔案
+      <input type="file" id="file-input" multiple accept="image/*" hidden></label>
+  </div>
+  <div id="file-list"></div>
+  <button id="btn-load" disabled>Load</button>
+</div></div>
+
+<div id="vis-popup">
+  <div class="nm" id="vp-name"></div>
+  <button data-v="1.0">1.0 清晰</button>
+  <button data-v="0.7">0.7 輕度遮</button>
+  <button data-v="0.3">0.3 推測</button>
+  <button data-v="0.0">0.0 不可見</button>
+</div>
+
+<script>
+"use strict";
+// ===== Schema v1.1 — 對齊 Rhino_Hsiao_SimAI_Landmark/01_Annotation/landmark_schema_v1.md =====
+const LANDMARKS=[
+  {key:'nasion',en:'Nasion',zh:'鼻根',color:'#FF3030',def:'鼻額縫最深點軟組織投影（sellion）；側面鼻背最凹處'},
+  {key:'pronasale',en:'Pronasale',zh:'鼻尖',color:'#FF5050',def:'鼻尖最突點'},
+  {key:'subnasale',en:'Subnasale',zh:'鼻下點',color:'#FF7070',def:'鼻小柱與上唇接點正中（鼻底與人中交會）'},
+  {key:'alare_r',en:'Alare R',zh:'右鼻翼緣',color:'#30C030',def:'右鼻翼緣最外側點（病人自己的右＝AP 照觀察者的左）'},
+  {key:'alare_l',en:'Alare L',zh:'左鼻翼緣',color:'#50E050',def:'左鼻翼緣最外側點（病人自己的左＝AP 照觀察者的右）'},
+  {key:'alar_base_r',en:'Alar base R',zh:'右鼻翼基底',color:'#3060FF',def:'右鼻翼與面頰交界最下點（lateral 看不到→vis 0）'},
+  {key:'alar_base_l',en:'Alar base L',zh:'左鼻翼基底',color:'#5080FF',def:'左鼻翼與面頰交界最下點（lateral 看不到→vis 0）'},
+  {key:'columella_lip_jx',en:'Columella-lip',zh:'鼻小柱底',color:'#FFAA00',def:'鼻小柱底與人中接點'},
+  {key:'labiale_superius',en:'Labiale sup.',zh:'上唇紅唇緣',color:'#FFCC50',def:'上唇紅唇邊緣正中點'},
+  {key:'glabella',en:'Glabella',zh:'眉間',color:'#C030FF',def:'兩眉之間額骨最前突軟組織（眼鏡遮→vis 0.3）'},
+  {key:'rhinion',en:'Rhinion',zh:'鼻背中點',color:'#E060FF',def:'鼻骨與軟骨交界軟組織投影；⭐dorsal curvature 關鍵（saddle nose 無 bump 標 dorsum 中點 vis 0.7）'},
+  {key:'medial_canthus_r',en:'Med canthus R',zh:'右內眼角',color:'#00BCD4',def:'右上下眼皮鼻側交點軟組織'},
+  {key:'medial_canthus_l',en:'Med canthus L',zh:'左內眼角',color:'#26C6DA',def:'左上下眼皮鼻側交點軟組織'},
+  {key:'lateral_canthus_r',en:'Lat canthus R',zh:'右外眼角',color:'#0097A7',def:'右上下眼皮顳側交點軟組織'},
+  {key:'lateral_canthus_l',en:'Lat canthus L',zh:'左外眼角',color:'#00ACC1',def:'左上下眼皮顳側交點軟組織'},
+  {key:'pupil_r',en:'Pupil R',zh:'右瞳孔',color:'#FFFFFF',def:'右瞳孔中心（黑色虹膜中心；眼鏡反光遮→vis 0.3）'},
+  {key:'pupil_l',en:'Pupil L',zh:'左瞳孔',color:'#EEEEEE',def:'左瞳孔中心'},
+];
+const LM_IDX=Object.fromEntries(LANDMARKS.map((l,i)=>[l.key,i]));
+const VIEW_DEFAULTS={
+  AP:{glabella:0.5,rhinion:0,_others:1},
+  lateral_L:{alare_r:0.5,alar_base_r:0,alar_base_l:0,medial_canthus_r:0,lateral_canthus_r:0,pupil_r:0,pupil_l:0.5,medial_canthus_l:0.7,lateral_canthus_l:0.7,_others:1},
+  lateral_R:{alare_l:0.5,alar_base_r:0,alar_base_l:0,medial_canthus_l:0,lateral_canthus_l:0,pupil_l:0,pupil_r:0.5,medial_canthus_r:0.7,lateral_canthus_r:0.7,_others:1},
+  unknown:{_others:1},
+};
+function defVis(view,key){const d=VIEW_DEFAULTS[view]||VIEW_DEFAULTS.unknown;return (key in d)?d[key]:d._others;}
+
+const state={photos:[],current:-1,annotations:{},zoom:1,panX:0,panY:0,rot:0,imgW:0,imgH:0,
+  activeIdx:0,spaceHeld:false,panning:false,panStart:null,history:[],raterId:'anon'};
+const $=id=>document.getElementById(id);
+const stage=$('stage'),canvas=$('canvas'),ctx=canvas.getContext('2d'),overlay=$('overlay'),list=$('landmark-list');
+
+function el(t,a,...k){const e=document.createElement(t);if(a)for(const[x,v]of Object.entries(a)){
+  if(x==='class')e.className=v;else if(x==='style')e.setAttribute('style',v);
+  else if(x.startsWith('on'))e.addEventListener(x.slice(2),v);else e.setAttribute(x,v);}
+  for(const c of k){if(c==null)continue;e.appendChild(typeof c==='object'?c:document.createTextNode(String(c)));}return e;}
+function clear(e){while(e.firstChild)e.removeChild(e.firstChild);}
+
+// HUD help
+$('hud-help').innerHTML='<span class="help-key">wheel</span> zoom · <span class="help-key">space</span>+drag pan · '+
+  '<span class="help-key">R</span> 旋轉 · <span class="help-key">V</span> vis · <span class="help-key">Z</span> undo · <span class="help-key">Enter</span> save';
+
+// ===== Picker（3 來源：資料夾遞迴 / 多檔 / 拖曳）=====
+const fileInput=$('file-input'),dirInput=$('dir-input'),btnLoad=$('btn-load');let pending=[];
+function viewFromName(n){const l=n.toLowerCase();
+  if(l.startsWith('ap_'))return'AP';if(l.startsWith('lateral_l_'))return'lateral_L';
+  if(l.startsWith('lateral_r_'))return'lateral_R';if(/oblique_l/.test(l))return'oblique_L';
+  if(/oblique_r/.test(l))return'oblique_R';return'unknown';}
+const isImg=f=>/\.(jpe?g|png)$/i.test(f.name);
+// dedup by name+size，多來源累加不重複
+function setPending(files){
+  const seen=new Set(pending.map(f=>f.name+'|'+f.size));
+  files.filter(isImg).forEach(f=>{const k=f.name+'|'+f.size;if(!seen.has(k)){seen.add(k);pending.push(f);}});
+  pending.sort((a,b)=>a.name.localeCompare(b.name));
+  clear($('file-list'));
+  pending.forEach(f=>$('file-list').appendChild(el('div',{class:'file-row'},f.name+' ',el('span',{class:'view-tag'},'('+viewFromName(f.name)+')'))));
+  btnLoad.disabled=!pending.length;btnLoad.textContent='Load '+pending.length+' photos';}
+fileInput.addEventListener('change',e=>setPending(Array.from(e.target.files)));
+dirInput.addEventListener('change',e=>setPending(Array.from(e.target.files)));
+
+// 拖曳（含資料夾遞迴 webkitGetAsEntry）
+const dz=$('drop-zone');
+['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();if(ev!=='drop')dz.classList.remove('over');}));
+function readEntry(entry,out){return new Promise(res=>{
+  if(entry.isFile){entry.file(f=>{out.push(f);res();},()=>res());}
+  else if(entry.isDirectory){const rd=entry.createReader();const all=[];
+    const readBatch=()=>rd.readEntries(ents=>{
+      if(!ents.length){Promise.all(all.map(e=>readEntry(e,out))).then(res);return;}
+      all.push(...ents);readBatch();},()=>res());
+    readBatch();}
+  else res();});}
+dz.addEventListener('drop',async e=>{dz.classList.remove('over');
+  const items=Array.from(e.dataTransfer.items||[]);
+  const entries=items.map(it=>it.webkitGetAsEntry&&it.webkitGetAsEntry()).filter(Boolean);
+  if(entries.length){const out=[];await Promise.all(entries.map(en=>readEntry(en,out)));setPending(out);}
+  else setPending(Array.from(e.dataTransfer.files||[]));});
+btnLoad.addEventListener('click',()=>{
+  const rid=($('rater-id').value||'').trim().replace(/[^a-zA-Z0-9_\-]/g,'_');
+  state.raterId=rid||'anon';
+  state.photos=pending.map(f=>({file:f,name:f.name,view:viewFromName(f.name),url:URL.createObjectURL(f)}));
+  $('picker').style.display='none';loadCache();showPhoto(0);
+  document.querySelector('#panel header .sub').textContent='schema v1.1 (17pt) · rater: '+state.raterId;});
+
+// ===== localStorage（key 帶 rater，inter/intra-rater 各自不互蓋）=====
+const LS_BASE='slope_spreader_landmark_pilot';
+function lsKey(){return LS_BASE+'__'+state.raterId;}
+function loadCache(){try{state.annotations=JSON.parse(localStorage.getItem(lsKey())||'{}');}catch{state.annotations={};}}
+function save(){localStorage.setItem(lsKey(),JSON.stringify(state.annotations));}
+
+// ===== Photo =====
+function showPhoto(idx){
+  if(idx<0||idx>=state.photos.length)return;state.current=idx;const p=state.photos[idx];
+  const img=new Image();img.onload=()=>{
+    state.imgW=img.naturalWidth;state.imgH=img.naturalHeight;
+    canvas.width=state.imgW;canvas.height=state.imgH;ctx.drawImage(img,0,0);
+    canvas.style.width=state.imgW+'px';canvas.style.height=state.imgH+'px';
+    $('minimap-img').src=p.url;state.rot=0;
+    if(!state.annotations[p.name])state.annotations[p.name]={photoName:p.name,view:p.view,rot:0,landmarks:{},startTime:Date.now()};
+    state.activeIdx=nextEmpty();state.history=[];
+    fitView();
+    renderAll();};
+  img.src=p.url;}
+function nextEmpty(){const a=state.annotations[state.photos[state.current].name];
+  for(let i=0;i<LANDMARKS.length;i++)if(!a.landmarks[LANDMARKS[i].key])return i;return LANDMARKS.length-1;}
+function fitView(){const r=stage.getBoundingClientRect();const f=Math.min(r.width/state.imgW,r.height/state.imgH);
+  state.zoom=Math.min(f*0.95,4);state.panX=(r.width-state.imgW*state.zoom)/2;state.panY=(r.height-state.imgH*state.zoom)/2;applyT();}
+function applyT(){
+  canvas.style.transform=`translate(${state.panX}px,${state.panY}px) scale(${state.zoom}) rotate(${state.rot}deg)`;
+  renderDots();renderMinimap();renderOverlay();}
+
+// ===== coord (含旋轉) =====
+function clientToImage(cx,cy){
+  const r=stage.getBoundingClientRect();
+  // 反算：先去 pan，再去 scale，再去 rotate（繞 canvas 中心）
+  let x=(cx-r.left-state.panX)/state.zoom, y=(cy-r.top-state.panY)/state.zoom;
+  const cxC=state.imgW/2, cyC=state.imgH/2, a=-state.rot*Math.PI/180;
+  const dx=x-cxC, dy=y-cyC;
+  return {x:cxC+dx*Math.cos(a)-dy*Math.sin(a), y:cyC+dx*Math.sin(a)+dy*Math.cos(a)};}
+function imageToScreen(ix,iy){
+  const cxC=state.imgW/2,cyC=state.imgH/2,a=state.rot*Math.PI/180;
+  const dx=ix-cxC,dy=iy-cyC;
+  const rx=cxC+dx*Math.cos(a)-dy*Math.sin(a), ry=cyC+dx*Math.sin(a)+dy*Math.cos(a);
+  return {x:state.panX+rx*state.zoom, y:state.panY+ry*state.zoom};}
+
+function renderDots(){
+  document.querySelectorAll('.dot').forEach(e=>e.remove());
+  const p=state.photos[state.current];if(!p)return;const a=state.annotations[p.name];
+  Object.entries(a.landmarks).forEach(([k,lm])=>{
+    const d=LANDMARKS[LM_IDX[k]];const s=imageToScreen(lm.x,lm.y);const cls=['dot'];
+    if(lm.vis<0.5)cls.push('invisible');if(lm.vis===0)cls.push('vis-0');
+    const dot=el('div',{class:cls.join(' '),title:d.en+' · vis '+lm.vis,'data-key':k,
+      style:`left:${s.x}px;top:${s.y}px;width:14px;height:14px;background:${d.color};`});
+    dot.addEventListener('contextmenu',e=>{e.preventDefault();openVis(e.clientX,e.clientY,k);});
+    stage.appendChild(dot);});}
+
+function renderMinimap(){
+  const r=stage.getBoundingClientRect(),mm=$('minimap').getBoundingClientRect(),vp=$('minimap-vp');
+  const ir=state.imgW/state.imgH,mr=mm.width/mm.height;let w,h,ox,oy;
+  if(ir>mr){w=mm.width;h=mm.width/ir;ox=0;oy=(mm.height-h)/2;}else{h=mm.height;w=mm.height*ir;oy=0;ox=(mm.width-w)/2;}
+  const vl=-state.panX/state.zoom,vt=-state.panY/state.zoom,vw=r.width/state.zoom,vh=r.height/state.zoom,sc=w/state.imgW;
+  vp.style.left=(ox+vl*sc)+'px';vp.style.top=(oy+vt*sc)+'px';vp.style.width=(vw*sc)+'px';vp.style.height=(vh*sc)+'px';}
+
+// 畫鼻背線 overlay（nasion-rhinion-pronasale + glabella-nasion）
+function renderOverlay(){
+  const r=stage.getBoundingClientRect();overlay.setAttribute('width',r.width);overlay.setAttribute('height',r.height);
+  clear(overlay);const p=state.photos[state.current];if(!p)return;const a=state.annotations[p.name];
+  const seg=(k1,k2,col)=>{const l1=a.landmarks[k1],l2=a.landmarks[k2];if(!l1||!l2)return;
+    const s1=imageToScreen(l1.x,l1.y),s2=imageToScreen(l2.x,l2.y);
+    const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+    ln.setAttribute('x1',s1.x);ln.setAttribute('y1',s1.y);ln.setAttribute('x2',s2.x);ln.setAttribute('y2',s2.y);
+    ln.setAttribute('stroke',col);ln.setAttribute('stroke-width','1.5');ln.setAttribute('stroke-dasharray','4 3');overlay.appendChild(ln);};
+  seg('glabella','nasion','#C030FF');seg('nasion','rhinion','#ffd166');seg('rhinion','pronasale','#ffd166');
+  seg('pronasale','subnasale','#FF7070');seg('subnasale','labiale_superius','#FFCC50');}
+
+// ===== Landmark list =====
+function renderList(){
+  const a=state.annotations[state.photos[state.current]?.name];if(!a)return;clear(list);
+  LANDMARKS.forEach((lm,i)=>{const pl=a.landmarks[lm.key];const cls=['landmark-row',pl?'done':'pending'];
+    if(i===state.activeIdx)cls.push('active');if(pl&&pl.vis<0.5)cls.push('vis-low');
+    const row=el('div',{class:cls.join(' '),title:(i+1)+'. '+lm.en+'（'+lm.zh+'）\n'+lm.def},el('div',{class:'idx'},i+1),
+      el('div',null,el('span',{class:'swatch',style:'background:'+lm.color}),
+        el('span',{class:'name'},lm.en+' ',el('span',{class:'zh'},lm.zh))),
+      el('div',{class:'vis'},'vis '+(pl?pl.vis.toFixed(1):'-')));
+    row.addEventListener('click',()=>{state.activeIdx=i;renderList();});list.appendChild(row);});
+  const cnt=Object.keys(a.landmarks).length;$('i-prog').textContent=cnt+'/17';
+  $('i-name').textContent=state.photos[state.current].name;$('i-view').textContent=a.view;
+  // 定義框：顯示 active landmark 定義
+  const act=LANDMARKS[state.activeIdx];
+  if(act){$('def-pt').textContent=(state.activeIdx+1)+'. '+act.en+'（'+act.zh+'）';$('def-text').textContent=act.def;}}
+
+// ===== 角度計算 =====
+function getPt(a,k){const lm=a.landmarks[k];return (lm&&lm.vis>=0.5)?lm:null;}
+function angle3(A,B,C){ // angle at B
+  const v1={x:A.x-B.x,y:A.y-B.y},v2={x:C.x-B.x,y:C.y-B.y};
+  const dot=v1.x*v2.x+v1.y*v2.y,m1=Math.hypot(v1.x,v1.y),m2=Math.hypot(v2.x,v2.y);
+  if(!m1||!m2)return null;return Math.acos(Math.max(-1,Math.min(1,dot/(m1*m2))))*180/Math.PI;}
+function angleVert(A,B){ // angle of line A→B from vertical
+  const dx=B.x-A.x,dy=B.y-A.y;return Math.abs(Math.atan2(dx,dy)*180/Math.PI);}
+function renderAngles(){
+  const a=state.annotations[state.photos[state.current]?.name];if(!a)return;
+  const set=(id,val,unit)=>{const e=$(id);if(val==null){e.textContent='—';e.classList.add('na');}
+    else{e.textContent=val.toFixed(1)+(unit||'°');e.classList.remove('na');}};
+  const gla=getPt(a,'glabella'),nas=getPt(a,'nasion'),pro=getPt(a,'pronasale'),
+    sub=getPt(a,'subnasale'),lab=getPt(a,'labiale_superius'),rhi=getPt(a,'rhinion');
+  set('a-nfa', (gla&&nas&&pro)?angle3(gla,nas,pro):null);
+  set('a-slope',(nas&&pro)?angleVert(nas,pro):null);
+  set('a-curv',(nas&&rhi&&pro)?angle3(nas,rhi,pro):null);
+  set('a-nla', (pro&&sub&&lab)?angle3(pro,sub,lab):null);
+  const goode=(nas&&pro&&sub)?(Math.hypot(nas.x-pro.x,nas.y-pro.y)/Math.hypot(pro.x-sub.x,pro.y-sub.y)):null;
+  set('a-goode',goode,'');}
+
+function renderAll(){renderList();applyT();renderAngles();}
+
+// ===== Place / vis popup =====
+stage.addEventListener('click',e=>{
+  if(state.spaceHeld||state.panning)return;if(e.target.classList.contains('dot'))return;
+  const a=state.annotations[state.photos[state.current].name];const key=LANDMARKS[state.activeIdx].key;
+  const pt=clientToImage(e.clientX,e.clientY);
+  state.history.push(JSON.parse(JSON.stringify(a.landmarks)));
+  a.landmarks[key]={x:Math.round(pt.x),y:Math.round(pt.y),vis:defVis(a.view,key)};
+  save();if(state.activeIdx<LANDMARKS.length-1)state.activeIdx=nextEmpty();renderAll();});
+
+const vp=$('vis-popup');
+function openVis(x,y,key){vp.style.left=x+'px';vp.style.top=y+'px';vp.classList.add('show');vp.setAttribute('data-key',key);
+  $('vp-name').textContent=LANDMARKS[LM_IDX[key]].en;
+  const cur=state.annotations[state.photos[state.current].name].landmarks[key].vis;
+  vp.querySelectorAll('button').forEach(b=>b.classList.toggle('selected',parseFloat(b.getAttribute('data-v'))===cur));}
+vp.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+  const v=parseFloat(b.getAttribute('data-v')),key=vp.getAttribute('data-key');
+  state.annotations[state.photos[state.current].name].landmarks[key].vis=v;save();vp.classList.remove('show');renderAll();}));
+document.addEventListener('click',e=>{if(!vp.contains(e.target)&&!e.target.classList.contains('dot'))vp.classList.remove('show');});
+
+// ===== zoom / pan =====
+stage.addEventListener('wheel',e=>{e.preventDefault();const r=stage.getBoundingClientRect();
+  const mx=e.clientX-r.left,my=e.clientY-r.top;const f=e.deltaY<0?1.12:1/1.12;
+  const nz=Math.max(0.1,Math.min(12,state.zoom*f));
+  state.panX=mx-(mx-state.panX)*(nz/state.zoom);state.panY=my-(my-state.panY)*(nz/state.zoom);state.zoom=nz;applyT();},{passive:false});
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'){state.spaceHeld=true;stage.classList.add('panning');e.preventDefault();}
+  else if(e.key==='z'||e.key==='Z')undo();
+  else if(e.key==='r'||e.key==='R'){state.rot=(state.rot+90)%360;applyT();}
+  else if(e.key==='Enter'){saveNext();}
+  else if(e.key==='v'||e.key==='V'){const a=state.annotations[state.photos[state.current]?.name];
+    const k=LANDMARKS[state.activeIdx].key;if(a&&a.landmarks[k]){const s=imageToScreen(a.landmarks[k].x,a.landmarks[k].y);openVis(s.x,s.y,k);}}});
+document.addEventListener('keyup',e=>{if(e.code==='Space'){state.spaceHeld=false;state.panning=false;stage.classList.remove('panning','active');}});
+stage.addEventListener('mousedown',e=>{if(state.spaceHeld){state.panning=true;stage.classList.add('active');state.panStart={x:e.clientX-state.panX,y:e.clientY-state.panY};}});
+document.addEventListener('mousemove',e=>{if(state.panning&&state.panStart){state.panX=e.clientX-state.panStart.x;state.panY=e.clientY-state.panStart.y;applyT();}});
+document.addEventListener('mouseup',()=>{state.panning=false;stage.classList.remove('active');});
+function undo(){const a=state.annotations[state.photos[state.current]?.name];if(!a||!state.history.length)return;
+  a.landmarks=state.history.pop();state.activeIdx=nextEmpty();save();renderAll();}
+
+// ===== toolbar =====
+$('t-rot-l').onclick=()=>{state.rot=(state.rot-90+360)%360;applyT();};
+$('t-rot-r').onclick=()=>{state.rot=(state.rot+90)%360;applyT();};
+$('t-rot-fine').onclick=()=>{state.rot=(state.rot+1)%360;applyT();};
+$('t-rot-reset').onclick=()=>{state.rot=0;applyT();};
+$('t-fit').onclick=fitView;
+$('n-prev').onclick=()=>showPhoto(state.current-1);
+$('n-next').onclick=()=>showPhoto(state.current+1);
+$('n-save').onclick=saveNext;
+function saveNext(){save();if(state.current<state.photos.length-1)showPhoto(state.current+1);else alert('已是最後一張，全部已存 localStorage。可 Export。');}
+
+// ===== Export =====
+function download(name,content,type){const blob=new Blob([content],{type});const u=URL.createObjectURL(blob);
+  const a=el('a',{href:u,download:name});document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);}
+$('n-export-json').onclick=()=>{
+  // SimAI 格式 + rater：每張 photo → {key:{x,y,vis}}（對齊 rhino_landmark_annotations.landmark_json）
+  const out={rater_id:state.raterId,schema:'v1.1',exported:new Date().toISOString(),photos:{}};
+  for(const[name,a]of Object.entries(state.annotations)){
+    const lm={};LANDMARKS.forEach(d=>{const p=a.landmarks[d.key];lm[d.key]=p?{x:p.x,y:p.y,vis:p.vis}:{x:0,y:0,vis:0};});
+    out.photos[name]={photoName:name,view:a.view,rater_id:state.raterId,schema:'v1.1',landmark_json:lm};}
+  download('landmarks_'+state.raterId+'_v1.1.json',JSON.stringify(out,null,2),'application/json');};
+$('n-export-csv').onclick=()=>{
+  // CSV 帶 rater_id（inter/intra-rater：多 rater 檔合併後依 photo×rater 算 ICC/κ）
+  const rows=[['rater_id','photo','view','NFA_deg','dorsal_slope_deg','dorsal_curvature_deg','NLA_deg','Goode_ratio']];
+  for(const[name,a]of Object.entries(state.annotations)){
+    const g=k=>{const lm=a.landmarks[k];return(lm&&lm.vis>=0.5)?lm:null;};
+    const gla=g('glabella'),nas=g('nasion'),pro=g('pronasale'),sub=g('subnasale'),lab=g('labiale_superius'),rhi=g('rhinion');
+    const f=v=>v==null?'':v.toFixed(2);
+    rows.push([state.raterId,name,a.view,
+      f((gla&&nas&&pro)?angle3(gla,nas,pro):null),
+      f((nas&&pro)?angleVert(nas,pro):null),
+      f((nas&&rhi&&pro)?angle3(nas,rhi,pro):null),
+      f((pro&&sub&&lab)?angle3(pro,sub,lab):null),
+      f((nas&&pro&&sub)?(Math.hypot(nas.x-pro.x,nas.y-pro.y)/Math.hypot(pro.x-sub.x,pro.y-sub.y)):null)]);}
+  download('measurements_'+state.raterId+'.csv',rows.map(r=>r.join(',')).join('\n'),'text/csv');};
+
+window.addEventListener('resize',()=>{if(state.current>=0)applyT();});
+</script>
+</body>
+</html>

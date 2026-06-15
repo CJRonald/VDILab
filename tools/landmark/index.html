@@ -42,7 +42,9 @@
   .landmark-row:hover{background:var(--panel2);} .landmark-row.active{background:var(--panel2);border-left-color:var(--accent);}
   .landmark-row.pending .name{color:var(--muted);} .landmark-row.vis-low{opacity:.6;}
   .swatch{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle;}
-  .zh{color:var(--muted);font-size:10px;} .idx{color:var(--muted);text-align:right;} .vis{color:var(--muted);text-align:right;}
+  .zh{color:var(--muted);font-size:10px;} .idx{color:var(--muted);text-align:right;} .vis{color:var(--muted);text-align:right;position:relative;}
+  .del-x{display:none;margin-left:6px;color:var(--warn);cursor:pointer;font-weight:bold;padding:0 3px;}
+  .landmark-row:hover .del-x{display:inline;} .del-x:hover{color:#ff5252;}
   #def-box{padding:8px 14px;background:#1e1e1e;border-top:1px solid var(--border);font-size:11px;line-height:1.5;min-height:48px;}
   #def-box #def-pt{display:block;color:var(--accent);font-weight:600;margin-bottom:2px;}
   #def-box #def-text{color:var(--muted);}
@@ -97,6 +99,7 @@
       <button id="t-rot-fine">微調 +1°</button>
       <button id="t-rot-reset">轉正歸零</button>
       <button id="t-fit">符合視窗</button>
+      <button id="t-clear">🗑 清除全部</button>
     </div>
     <div class="landmarks" id="landmark-list"></div>
     <div id="def-box"><span id="def-pt">—</span><span id="def-text">點選左側 landmark 看定義</span></div>
@@ -147,7 +150,8 @@
   <button data-v="1.0">1.0 清晰</button>
   <button data-v="0.7">0.7 輕度遮</button>
   <button data-v="0.3">0.3 推測</button>
-  <button data-v="0.0">0.0 不可見</button>
+  <button data-v="0.0">0.0 不可見（保留 placeholder）</button>
+  <button data-act="del" style="color:var(--warn);border-top:1px solid var(--border);margin-top:2px;">🗑 刪除此點（回未標）</button>
 </div>
 
 <script>
@@ -314,10 +318,13 @@ function renderList(){
   const a=state.annotations[state.photos[state.current]?.name];if(!a)return;clear(list);
   LANDMARKS.forEach((lm,i)=>{const pl=a.landmarks[lm.key];const cls=['landmark-row',pl?'done':'pending'];
     if(i===state.activeIdx)cls.push('active');if(pl&&pl.vis<0.5)cls.push('vis-low');
+    const visCell=el('div',{class:'vis'},'vis '+(pl?pl.vis.toFixed(1):'-'));
+    if(pl){const xb=el('span',{class:'del-x',title:'刪除此點（回未標，可重標）'},'✕');
+      xb.addEventListener('click',ev=>{ev.stopPropagation();deletePoint(lm.key);});visCell.appendChild(xb);}
     const row=el('div',{class:cls.join(' '),title:(i+1)+'. '+lm.en+'（'+lm.zh+'）\n'+lm.def},el('div',{class:'idx'},i+1),
       el('div',null,el('span',{class:'swatch',style:'background:'+lm.color}),
         el('span',{class:'name'},lm.en+' ',el('span',{class:'zh'},lm.zh))),
-      el('div',{class:'vis'},'vis '+(pl?pl.vis.toFixed(1):'-')));
+      visCell);
     row.addEventListener('click',()=>{state.activeIdx=i;renderList();});list.appendChild(row);});
   const cnt=Object.keys(a.landmarks).length;$('i-prog').textContent=cnt+'/17';
   $('i-name').textContent=state.photos[state.current].name;$('i-view').textContent=a.view;
@@ -377,8 +384,10 @@ function openVis(x,y,key){vp.style.left=x+'px';vp.style.top=y+'px';vp.classList.
   const cur=state.annotations[state.photos[state.current].name].landmarks[key].vis;
   vp.querySelectorAll('button').forEach(b=>b.classList.toggle('selected',parseFloat(b.getAttribute('data-v'))===cur));}
 vp.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
-  const v=parseFloat(b.getAttribute('data-v')),key=vp.getAttribute('data-key');
-  state.annotations[state.photos[state.current].name].landmarks[key].vis=v;save();vp.classList.remove('show');renderAll();}));
+  const key=vp.getAttribute('data-key');vp.classList.remove('show');
+  if(b.getAttribute('data-act')==='del'){deletePoint(key);return;}  // 刪除回未標
+  const v=parseFloat(b.getAttribute('data-v'));
+  state.annotations[state.photos[state.current].name].landmarks[key].vis=v;save();renderAll();}));
 document.addEventListener('click',e=>{if(!vp.contains(e.target)&&!e.target.classList.contains('dot'))vp.classList.remove('show');});
 
 // ===== zoom / pan =====
@@ -392,13 +401,28 @@ document.addEventListener('keydown',e=>{
   else if(e.key==='r'||e.key==='R'){state.rot=(state.rot+90)%360;applyT();}
   else if(e.key==='Enter'){saveNext();}
   else if(e.key==='v'||e.key==='V'){const a=state.annotations[state.photos[state.current]?.name];
-    const k=LANDMARKS[state.activeIdx].key;if(a&&a.landmarks[k]){const s=imageToScreen(a.landmarks[k].x,a.landmarks[k].y);openVis(s.x,s.y,k);}}});
+    const k=LANDMARKS[state.activeIdx].key;if(a&&a.landmarks[k]){const s=imageToScreen(a.landmarks[k].x,a.landmarks[k].y);openVis(s.x,s.y,k);}}
+  else if(e.key==='d'||e.key==='D'||e.key==='Delete'||e.key==='Backspace'){
+    e.preventDefault();deletePoint(LANDMARKS[state.activeIdx].key);}});
 document.addEventListener('keyup',e=>{if(e.code==='Space'){state.spaceHeld=false;state.panning=false;stage.classList.remove('panning','active');}});
 stage.addEventListener('mousedown',e=>{if(state.spaceHeld){state.panning=true;stage.classList.add('active');state.panStart={x:e.clientX-state.panX,y:e.clientY-state.panY};}});
 document.addEventListener('mousemove',e=>{if(state.panning&&state.panStart){state.panX=e.clientX-state.panStart.x;state.panY=e.clientY-state.panStart.y;applyT();}});
 document.addEventListener('mouseup',()=>{state.panning=false;stage.classList.remove('active');});
 function undo(){const a=state.annotations[state.photos[state.current]?.name];if(!a||!state.history.length)return;
   a.landmarks=state.history.pop();state.activeIdx=nextEmpty();save();renderAll();}
+// 刪除單一已標點 → 回未標狀態（可重標）；push history 可 undo
+function deletePoint(key){const a=state.annotations[state.photos[state.current]?.name];
+  if(!a||!a.landmarks[key])return;
+  state.history.push(JSON.parse(JSON.stringify(a.landmarks)));
+  delete a.landmarks[key];
+  state.activeIdx=LM_IDX[key];  // 設為被刪點，方便立刻重標
+  save();renderAll();}
+// 清除整張所有點（需確認）
+function clearAllPoints(){const a=state.annotations[state.photos[state.current]?.name];
+  if(!a||!Object.keys(a.landmarks).length)return;
+  if(!confirm('清除這張照片所有已標點？（可 Z 復原）'))return;
+  state.history.push(JSON.parse(JSON.stringify(a.landmarks)));
+  a.landmarks={};state.activeIdx=0;save();renderAll();}
 
 // ===== toolbar =====
 $('t-rot-l').onclick=()=>{state.rot=(state.rot-90+360)%360;applyT();};
@@ -406,6 +430,7 @@ $('t-rot-r').onclick=()=>{state.rot=(state.rot+90)%360;applyT();};
 $('t-rot-fine').onclick=()=>{state.rot=(state.rot+1)%360;applyT();};
 $('t-rot-reset').onclick=()=>{state.rot=0;applyT();};
 $('t-fit').onclick=fitView;
+$('t-clear').onclick=clearAllPoints;
 $('n-prev').onclick=()=>showPhoto(state.current-1);
 $('n-next').onclick=()=>showPhoto(state.current+1);
 $('n-save').onclick=saveNext;

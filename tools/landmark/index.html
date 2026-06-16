@@ -31,7 +31,9 @@
   #panel header{padding:12px 14px;background:var(--panel2);border-bottom:1px solid var(--border);}
   #panel header h1{font-size:14px;font-weight:600;} #panel header .sub{font-size:11px;color:var(--muted);margin-top:2px;}
   .photo-info{padding:8px 14px;font-size:12px;border-bottom:1px solid var(--border);line-height:1.7;}
-  .photo-info .row{display:flex;justify-content:space-between;} .photo-info .row span:first-child{color:var(--muted);}
+  .photo-info .row{display:flex;justify-content:space-between;align-items:center;} .photo-info .row span:first-child{color:var(--muted);}
+  #i-view-sel{background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:4px;
+    padding:2px 6px;font-size:11px;cursor:pointer;} #i-view-sel.unknown{border-color:var(--warn);color:var(--warn);}
   .toolbar{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--border);}
   .toolbar button,.nav button{background:var(--panel2);color:var(--text);border:1px solid var(--border);
     border-radius:5px;padding:5px 9px;font-size:12px;cursor:pointer;}
@@ -90,7 +92,16 @@
     </header>
     <div class="photo-info">
       <div class="row"><span>Photo</span><span id="i-name">—</span></div>
-      <div class="row"><span>View</span><span id="i-view">—</span></div>
+      <div class="row"><span>View</span>
+        <select id="i-view-sel">
+          <option value="AP">AP（正面）</option>
+          <option value="lateral_L">lateral_L（左側）</option>
+          <option value="lateral_R">lateral_R（右側）</option>
+          <option value="oblique_L">oblique_L（左斜）</option>
+          <option value="oblique_R">oblique_R（右斜）</option>
+          <option value="unknown">unknown（未定）</option>
+        </select>
+      </div>
       <div class="row"><span>Progress</span><span id="i-prog">0/17</span></div>
     </div>
     <div class="toolbar">
@@ -327,7 +338,8 @@ function renderList(){
       visCell);
     row.addEventListener('click',()=>{state.activeIdx=i;renderList();});list.appendChild(row);});
   const cnt=Object.keys(a.landmarks).length;$('i-prog').textContent=cnt+'/17';
-  $('i-name').textContent=state.photos[state.current].name;$('i-view').textContent=a.view;
+  $('i-name').textContent=state.photos[state.current].name;
+  const vsel=$('i-view-sel');vsel.value=a.view;vsel.classList.toggle('unknown',a.view==='unknown');
   // 定義框：顯示 active landmark 定義
   const act=LANDMARKS[state.activeIdx];
   if(act){$('def-pt').textContent=(state.activeIdx+1)+'. '+act.en+'（'+act.zh+'）';$('def-text').textContent=act.def;}}
@@ -425,6 +437,14 @@ function clearAllPoints(){const a=state.annotations[state.photos[state.current]?
   a.landmarks={};state.activeIdx=0;save();renderAll();}
 
 // ===== toolbar =====
+// 手動改 view（沒前綴 / 判錯時用）：寫回 annotation，重算量測 + 套 vis 預設到「未標」點
+$('i-view-sel').addEventListener('change',e=>{
+  const a=state.annotations[state.photos[state.current]?.name];if(!a)return;
+  a.view=e.target.value;
+  // 同步更新 photo 物件（影響 nextEmpty 之類）+ 對「尚未標」的點套新 view 的 vis 預設
+  // 已標點不動其 vis（使用者可能已手動調過），未標點不存 placeholder，僅供下次 place 時取 defVis
+  state.photos[state.current].view=a.view;
+  save();renderAll();});
 $('t-rot-l').onclick=()=>{state.rot=(state.rot-90+360)%360;applyT();};
 $('t-rot-r').onclick=()=>{state.rot=(state.rot+90)%360;applyT();};
 $('t-rot-fine').onclick=()=>{state.rot=(state.rot+1)%360;applyT();};

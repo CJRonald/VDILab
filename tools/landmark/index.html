@@ -146,12 +146,14 @@
         <div class="ang-row"><span class="lbl">Goode ratio <small>~0.55-0.6</small></span><span class="v na" id="a-goode">—</span></div>
         <div class="ang-row"><span class="lbl">E-line 上唇 <small>labrale sup→E-line px（+前 −後）</small></span><span class="v na" id="a-eline-u">—</span></div>
         <div class="ang-row"><span class="lbl">E-line 下唇 <small>labrale inf→E-line px（+前 −後）</small></span><span class="v na" id="a-eline-l">—</span></div>
+        <div class="ang-row"><span class="lbl">上下唇高比 <small>labSup→sto : sto→labInf</small></span><span class="v na" id="a-lipratio">—</span></div>
       </div>
       <div id="ang-ap">
         <div class="ang-row"><span class="lbl">DAL 對稱 <small>alare R-L 高低差 px</small></span><span class="v na" id="a-dal">—</span></div>
         <div class="ang-row"><span class="lbl">Alar base 對稱 <small>base R-L 高低差 px</small></span><span class="v na" id="a-basesym">—</span></div>
         <div class="ang-row"><span class="lbl">AlarBase/IPD <small>鼻翼寬標準化</small></span><span class="v na" id="a-baseipd">—</span></div>
         <div class="ang-row"><span class="lbl">Chin deviation <small>pogonion 偏臉中線 px（+右 −左）</small></span><span class="v na" id="a-chindev">—</span></div>
+        <div class="ang-row"><span class="lbl">上下唇高比 <small>labSup→sto : sto→labInf</small></span><span class="v na" id="a-lipratio-ap">—</span></div>
       </div>
     </div>
     <div class="nav">
@@ -192,7 +194,7 @@
 
 <script>
 "use strict";
-console.log('%c[SlopeSpreader build] 22 點（含下巴 5 點 pogonion/menton/gnathion/sublabiale/labiale_inferius）+ E-line + NLA def-D + chin deviation · 2026-06-19','color:#4a9eff;font-weight:bold');
+console.log('%c[SlopeSpreader build] 23 點（下巴+唇 6 點：pogonion/menton/gnathion/sublabiale/labiale_inferius/stomion）+ E-line + NLA def-D + chin deviation + 上下唇高比 · 2026-06-19','color:#4a9eff;font-weight:bold');
 // ===== Schema v1.1 — 對齊 Rhino_Hsiao_SimAI_Landmark/01_Annotation/landmark_schema_v1.md =====
 const LANDMARKS=[
   {key:'nasion',en:'Nasion',zh:'鼻根',color:'#FF3030',def:'鼻額縫最深點軟組織投影（sellion）；側面鼻背最凹處'},
@@ -218,6 +220,7 @@ const LANDMARKS=[
   {key:'gnathion',en:'Gnathion',zh:'頦頂點',color:'#FFA3D1',def:'pogonion 與 menton 之間、側臉輪廓最前下點（AP 投影退化→vis 0.4）',extra:true},
   {key:'sublabiale',en:'Sublabiale',zh:'唇頦溝點',color:'#E060A0',def:'下唇與下巴間凹點（labiomental fold 最深處，AP/lateral 皆可見）',extra:true},
   {key:'labiale_inferius',en:'Labiale inf.',zh:'下唇紅唇緣',color:'#FFB0D8',def:'下唇紅唇邊緣正中點 — E-line 下唇距離用（AP/lateral 皆可見）',extra:true},
+  {key:'stomion',en:'Stomion',zh:'唇縫正中',color:'#D04080',def:'上下唇接觸正中點（唇閉合縫正中，介於 labiale sup 與 inf）— 上下唇高度比用（AP/lateral 皆可見）',extra:true},
 ];
 const LM_IDX=Object.fromEntries(LANDMARKS.map((l,i)=>[l.key,i]));
 const SIMAI_KEYS=LANDMARKS.filter(l=>!l.extra).map(l=>l.key);  // 前 17 = SimAI schema
@@ -436,7 +439,7 @@ function renderAngles(){
   $('ang-title').textContent=lat?'📐 側面量測（lateral）':ap?'📐 正面量測（AP）':'📐 量測（view 未定，手動選 view）';
   const gla=getPt(a,'glabella'),nas=getPt(a,'nasion'),pro=getPt(a,'pronasale'),
     sub=getPt(a,'subnasale'),lab=getPt(a,'labiale_superius'),rhi=getPt(a,'rhinion'),
-    clj=getPt(a,'columella_lip_jx'),pog=getPt(a,'pogonion'),labI=getPt(a,'labiale_inferius'),
+    clj=getPt(a,'columella_lip_jx'),pog=getPt(a,'pogonion'),labI=getPt(a,'labiale_inferius'),sto=getPt(a,'stomion'),
     alR=getPt(a,'alare_r'),alL=getPt(a,'alare_l'),baR=getPt(a,'alar_base_r'),baL=getPt(a,'alar_base_l'),
     puR=getPt(a,'pupil_r'),puL=getPt(a,'pupil_l');
   if(lat){
@@ -460,6 +463,7 @@ function renderAngles(){
     // E-line = pronasale→pogonion；唇到線的 signed 垂直距離（號意=哪一側，正負由標註左右朝向決定，報原始值供比對）
     set('a-eline-u',(pro&&pog&&lab)?signedDistToLine(lab,pro,pog):null,' px');
     set('a-eline-l',(pro&&pog&&labI)?signedDistToLine(labI,pro,pog):null,' px');
+    set('a-lipratio',(lab&&sto&&labI)?(Math.hypot(lab.x-sto.x,lab.y-sto.y)/Math.hypot(sto.x-labI.x,sto.y-labI.y)):null,'');
   } else if(ap){
     set('a-dal',(alR&&alL)?Math.abs(alR.y-alL.y):null,' px');
     set('a-basesym',(baR&&baL)?Math.abs(baR.y-baL.y):null,' px');
@@ -467,6 +471,7 @@ function renderAngles(){
     set('a-baseipd',(baR&&baL&&ipd)?(Math.hypot(baR.x-baL.x,baR.y-baL.y)/ipd):null,'');
     // Chin deviation = pogonion 偏離臉部正中線（glabella→subnasale）的 signed 垂直距離
     set('a-chindev',(pog&&gla&&sub)?signedDistToLine(pog,gla,sub):null,' px');
+    set('a-lipratio-ap',(lab&&sto&&labI)?(Math.hypot(lab.x-sto.x,lab.y-sto.y)/Math.hypot(sto.x-labI.x,sto.y-labI.y)):null,'');
   }}
 
 function renderAll(){renderList();applyT();renderAngles();if(typeof refreshLineBtns==='function')refreshLineBtns();}
@@ -630,12 +635,12 @@ $('n-export-csv').onclick=()=>{
   // 依 view 填對應欄；非該 view 的指標留空（避免錯 view 數值污染分析）
   const rows=[['rater_id','photo','view','NFA_deg','dorsal_slope_deg','dorsal_curvature_deg',
     'NLA_tangent_deg','NLA_point_deg','NLA_nostril_vert_deg','NLA_nostril_FH_deg','NLA_defD_deg',
-    'Goode_ratio','Eline_upperlip_px','Eline_lowerlip_px','DAL_sym_px','alarbase_sym_px','alarbase_IPD_ratio','chin_dev_px']];
+    'Goode_ratio','Eline_upperlip_px','Eline_lowerlip_px','lip_height_ratio','DAL_sym_px','alarbase_sym_px','alarbase_IPD_ratio','chin_dev_px']];
   for(const[name,a]of Object.entries(state.annotations)){
     const g=k=>{const lm=a.landmarks[k];return(lm&&lm.vis>=0.5)?lm:null;};
     const gL=k=>{const ln=a.lines&&a.lines[k];return(ln&&(ln.vis==null||ln.vis>=0.5))?ln:null;};
     const gla=g('glabella'),nas=g('nasion'),pro=g('pronasale'),sub=g('subnasale'),lab=g('labiale_superius'),rhi=g('rhinion'),
-      clj=g('columella_lip_jx'),pog=g('pogonion'),labI=g('labiale_inferius'),
+      clj=g('columella_lip_jx'),pog=g('pogonion'),labI=g('labiale_inferius'),sto=g('stomion'),
       alR=g('alare_r'),alL=g('alare_l'),baR=g('alar_base_r'),baL=g('alar_base_l'),puR=g('pupil_r'),puL=g('pupil_l');
     const colT=gL('columella_tangent'),lipT=gL('upperlip_tangent'),nosA=gL('nostril_axis'),frk=gL('frankfort_line');
     const f=v=>v==null?'':v.toFixed(2);
@@ -655,6 +660,7 @@ $('n-export-csv').onclick=()=>{
       f(lat&&nas&&pro&&sub?(Math.hypot(nas.x-pro.x,nas.y-pro.y)/Math.hypot(pro.x-sub.x,pro.y-sub.y)):null),
       f(lat&&pro&&pog&&lab?signedDistToLine(lab,pro,pog):null),
       f(lat&&pro&&pog&&labI?signedDistToLine(labI,pro,pog):null),
+      f(lab&&sto&&labI?(Math.hypot(lab.x-sto.x,lab.y-sto.y)/Math.hypot(sto.x-labI.x,sto.y-labI.y)):null),
       f(ap&&alR&&alL?Math.abs(alR.y-alL.y):null),
       f(ap&&baR&&baL?Math.abs(baR.y-baL.y):null),
       f(ap&&baR&&baL&&ipd?(Math.hypot(baR.x-baL.x,baR.y-baL.y)/ipd):null),

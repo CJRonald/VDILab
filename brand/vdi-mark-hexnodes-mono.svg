@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" fill="none">
+  <g>
+    <path d="M100 30 L160.6 65 L160.6 135 L100 170 L39.4 135 L39.4 65 Z" stroke="#0A0A0A" stroke-width="1.5" opacity="0.25" fill="none"></path>
+    <line x1="100" y1="30" x2="160.6" y2="135" stroke="#0A0A0A" stroke-width="2.5"></line>
+    <line x1="160.6" y1="135" x2="39.4" y2="135" stroke="#0A0A0A" stroke-width="2.5"></line>
+    <line x1="39.4" y1="135" x2="100" y2="30" stroke="#0A0A0A" stroke-width="2.5"></line>
+    <line x1="160.6" y1="65" x2="100" y2="170" stroke="#0A0A0A" stroke-width="2.5"></line>
+    <line x1="100" y1="170" x2="39.4" y2="65" stroke="#0A0A0A" stroke-width="2.5"></line>
+    <line x1="39.4" y1="65" x2="160.6" y2="65" stroke="#0A0A0A" stroke-width="2.5"></line>
+    <g stroke="#0A0A0A" stroke-width="1" opacity="0.3">
+      <line x1="100" y1="30" x2="100" y2="100"></line>
+      <line x1="160.6" y1="65" x2="100" y2="100"></line>
+      <line x1="160.6" y1="135" x2="100" y2="100"></line>
+      <line x1="100" y1="170" x2="100" y2="100"></line>
+      <line x1="39.4" y1="135" x2="100" y2="100"></line>
+      <line x1="39.4" y1="65" x2="100" y2="100"></line>
+    </g>
+    <circle cx="100" cy="30" r="6" fill="#0A0A0A"></circle>
+    <circle cx="160.6" cy="65" r="6" fill="#0A0A0A"></circle>
+    <circle cx="160.6" cy="135" r="6" fill="#0A0A0A"></circle>
+    <circle cx="100" cy="170" r="6" fill="#0A0A0A"></circle>
+    <circle cx="39.4" cy="135" r="6" fill="#0A0A0A"></circle>
+    <circle cx="39.4" cy="65" r="6" fill="#0A0A0A"></circle>
+    <circle cx="100" cy="100" r="10" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="3"></circle>
+    <circle cx="100" cy="100" r="3" fill="#0A0A0A"></circle>
+  </g>
+</svg>

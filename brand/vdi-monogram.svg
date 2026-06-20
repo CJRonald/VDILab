@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" fill="none">
+  
+  <path d="M22 52 L62 148 L102 52" stroke="#0B2545" stroke-width="12" stroke-linecap="square" stroke-linejoin="miter" fill="none"></path>
+  <path d="M118 52 L118 148 A 48 48 0 0 0 118 52 Z" stroke="#0B2545" stroke-width="12" fill="none"></path>
+  <line x1="186" y1="52" x2="186" y2="148" stroke="#00A39A" stroke-width="12" stroke-linecap="square"></line>
+  <line x1="178" y1="52" x2="194" y2="52" stroke="#00A39A" stroke-width="3"></line>
+  <line x1="178" y1="148" x2="194" y2="148" stroke="#00A39A" stroke-width="3"></line>
+</svg>

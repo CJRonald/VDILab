@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="220" viewBox="0 0 900 220" fill="none" font-family="&#39;JetBrains Mono&#39;, ui-monospace, monospace">
+  
+  <g fill="#0B2545" font-size="14" letter-spacing="3.08" text-anchor="end" opacity="0.78" font-weight="500">
+    <text x="200" y="80" text-transform="uppercase">VISION</text>
+    <text x="200" y="108" text-transform="uppercase">DRIVEN</text>
+    <text x="200" y="136" text-transform="uppercase">INTELLIGENCE</text>
+  </g>
+
+  
+  <g transform="translate(220,40) scale(0.7)">
+    <path d="M100 30 L160.6 65 L160.6 135 L100 170 L39.4 135 L39.4 65 Z" stroke="#0B2545" stroke-width="1.5" opacity="0.25" fill="none"></path>
+    <line x1="100" y1="30" x2="160.6" y2="135" stroke="#0B2545" stroke-width="2.5"></line>
+    <line x1="160.6" y1="135" x2="39.4" y2="135" stroke="#0B2545" stroke-width="2.5"></line>
+    <line x1="39.4" y1="135" x2="100" y2="30" stroke="#0B2545" stroke-width="2.5"></line>
+    <line x1="160.6" y1="65" x2="100" y2="170" stroke="#00A39A" stroke-width="2.5"></line>
+    <line x1="100" y1="170" x2="39.4" y2="65" stroke="#00A39A" stroke-width="2.5"></line>
+    <line x1="39.4" y1="65" x2="160.6" y2="65" stroke="#00A39A" stroke-width="2.5"></line>
+    <g stroke="#0B2545" stroke-width="1" opacity="0.3">
+      <line x1="100" y1="30" x2="100" y2="100"></line>
+      <line x1="160.6" y1="65" x2="100" y2="100"></line>
+      <line x1="160.6" y1="135" x2="100" y2="100"></line>
+      <line x1="100" y1="170" x2="100" y2="100"></line>
+      <line x1="39.4" y1="135" x2="100" y2="100"></line>
+      <line x1="39.4" y1="65" x2="100" y2="100"></line>
+    </g>
+    <circle cx="100" cy="30" r="6" fill="#0B2545"></circle>
+    <circle cx="160.6" cy="65" r="6" fill="#00A39A"></circle>
+    <circle cx="160.6" cy="135" r="6" fill="#0B2545"></circle>
+    <circle cx="100" cy="170" r="6" fill="#00A39A"></circle>
+    <circle cx="39.4" cy="135" r="6" fill="#0B2545"></circle>
+    <circle cx="39.4" cy="65" r="6" fill="#00A39A"></circle>
+    <circle cx="100" cy="100" r="10" fill="#FAFAF7" stroke="#0B2545" stroke-width="3"></circle>
+    <circle cx="100" cy="100" r="3" fill="#0B2545"></circle>
+  </g>
+
+  
+  <line x1="385" y1="60" x2="385" y2="160" stroke="#0B2545" stroke-width="1" opacity="0.22"></line>
+
+  
+  <g transform="translate(400,40) scale(0.7)">
+    <path d="M22 52 L62 148 L102 52" stroke="#0B2545" stroke-width="12" stroke-linecap="square" stroke-linejoin="miter" fill="none"></path>
+    <path d="M118 52 L118 148 A 48 48 0 0 0 118 52 Z" stroke="#0B2545" stroke-width="12" fill="none"></path>
+    <line x1="186" y1="52" x2="186" y2="148" stroke="#00A39A" stroke-width="12" stroke-linecap="square"></line>
+    <line x1="178" y1="52" x2="194" y2="52" stroke="#00A39A" stroke-width="3"></line>
+    <line x1="178" y1="148" x2="194" y2="148" stroke="#00A39A" stroke-width="3"></line>
+  </g>
+
+  
+  <g fill="#00A39A" font-size="14" letter-spacing="3.08" text-anchor="start" font-weight="500">
+    <text x="568" y="80" text-transform="uppercase">CGMH</text>
+    <text x="568" y="108" text-transform="uppercase">PRS</text>
+    <text x="568" y="136" text-transform="uppercase">LAB</text>
+  </g>
+</svg>

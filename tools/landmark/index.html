@@ -193,6 +193,7 @@
       <button id="n-save" class="wide">💾 儲存本張 (Enter)</button>
       <button id="n-export-json">Export JSON (SimAI 格式)</button>
       <button id="n-export-csv">Export 量測 CSV</button>
+      <button id="n-purge-orphans" class="wide" style="display:none;">🧹 清非本批照片 (<span id="orphan-n">0</span> 筆孤兒)</button>
     </div>
   </div>
 </div>
@@ -265,6 +266,7 @@
       <ul>
         <li>照片<b>只在你本機處理、永不上傳</b>（純前端）</li>
         <li>標註存瀏覽器 localStorage；換機器需自行 Export 帶走</li>
+        <li>Export 自動跳過無標點的空白照片；舊 session 殘留用「🧹 清非本批照片」清掉（避免污染）</li>
       </ul>
     </section>
   </div>
@@ -383,7 +385,7 @@ btnLoad.addEventListener('click',()=>{
   const rid=($('rater-id').value||'').trim().replace(/[^a-zA-Z0-9_\-]/g,'_');
   state.raterId=rid||'anon';
   state.photos=pending.map(f=>({file:f,name:f.name,view:viewFromName(f.name),url:URL.createObjectURL(f)}));
-  $('picker').style.display='none';loadCache();showPhoto(0);
+  $('picker').style.display='none';loadCache();showPhoto(0);refreshOrphanBtn();
   document.querySelector('#panel header .sub').textContent='schema v1.1 (17pt) · rater: '+state.raterId;});
 
 // ===== localStorage（key 帶 rater，inter/intra-rater 各自不互蓋）=====
@@ -391,6 +393,8 @@ const LS_BASE='slope_spreader_landmark_pilot';
 function lsKey(){return LS_BASE+'__'+state.raterId;}
 function loadCache(){try{state.annotations=JSON.parse(localStorage.getItem(lsKey())||'{}');}catch{state.annotations={};}}
 function save(){localStorage.setItem(lsKey(),JSON.stringify(state.annotations));}
+// 一筆 annotation 是否「有實際內容」（≥1 landmark 或 ≥1 line）→ Export 跳過空白 placeholder（showPhoto 一進就建殼，未標的不該污染輸出）
+function hasContent(a){return !!a&&((a.landmarks&&Object.keys(a.landmarks).length>0)||(a.lines&&Object.keys(a.lines).length>0));}
 
 // ===== Photo =====
 function showPhoto(idx){
@@ -778,6 +782,7 @@ $('n-export-json').onclick=()=>{
   // SimAI 格式 + rater：每張 photo → {key:{x,y,vis}}（對齊 rhino_landmark_annotations.landmark_json）
   const out={rater_id:state.raterId,schema:'v1.1',exported:new Date().toISOString(),photos:{}};
   for(const[name,a]of Object.entries(state.annotations)){
+    if(!hasContent(a))continue;  // 跳過無標點/線的空白殼（孤兒清理 #1）
     // landmark_json 保持 SimAI 17 點乾淨；下巴 5 點獨立存 extra_landmarks
     const lm={};SIMAI_KEYS.forEach(k=>{const p=a.landmarks[k];lm[k]=p?{x:p.x,y:p.y,vis:p.vis}:{x:0,y:0,vis:0};});
     const extra={};EXTRA_KEYS.forEach(k=>{const p=a.landmarks[k];extra[k]=p?{x:p.x,y:p.y,vis:p.vis}:{x:0,y:0,vis:0};});
@@ -791,6 +796,7 @@ $('n-export-csv').onclick=()=>{
     'NLA_tangent_deg','NLA_point_deg','NLA_nostril_vert_deg','NLA_nostril_FH_deg','NLA_defD_deg',
     'Goode_ratio','Eline_upperlip_px','Eline_lowerlip_px','lip_height_ratio','DAL_sym_px','alarbase_sym_px','alarbase_IPD_ratio','chin_dev_px']];
   for(const[name,a]of Object.entries(state.annotations)){
+    if(!hasContent(a))continue;  // 跳過空白殼（孤兒清理 #1）
     const g=k=>{const lm=a.landmarks[k];return(lm&&lm.vis>=0.5)?lm:null;};
     const gL=k=>{const ln=a.lines&&a.lines[k];return(ln&&(ln.vis==null||ln.vis>=0.5))?ln:null;};
     const gla=g('glabella'),nas=g('nasion'),pro=g('pronasale'),sub=g('subnasale'),lab=g('labiale_superius'),rhi=g('rhinion'),
@@ -820,6 +826,21 @@ $('n-export-csv').onclick=()=>{
       f(ap&&baR&&baL&&ipd?(Math.hypot(baR.x-baL.x,baR.y-baL.y)/ipd):null),
       f(ap&&pog&&gla&&sub?signedDistToLine(pog,gla,sub):null)]);}
   download('measurements_'+state.raterId+'.csv',rows.map(r=>r.join(',')).join('\n'),'text/csv');};
+
+// ===== 孤兒照片清理（#1）：localStorage 裡不在「目前載入清單」的 annotation key =====
+function orphanKeys(){const loaded=new Set(state.photos.map(p=>p.name));
+  return Object.keys(state.annotations).filter(k=>!loaded.has(k));}
+function refreshOrphanBtn(){const btn=$('n-purge-orphans');if(!btn)return;
+  const orphans=orphanKeys();
+  if(orphans.length){$('orphan-n').textContent=orphans.length;btn.style.display='';}
+  else btn.style.display='none';}
+$('n-purge-orphans').onclick=()=>{
+  const orphans=orphanKeys();if(!orphans.length)return;
+  const sample=orphans.slice(0,6).join('\n');
+  if(!confirm('清除 '+orphans.length+' 筆「不在目前載入清單」的孤兒標註？\n（這些是舊 session / 誤載殘留，清掉避免污染 Export）\n\n'+sample+(orphans.length>6?'\n…':'')))return;
+  orphans.forEach(k=>delete state.annotations[k]);
+  save();refreshOrphanBtn();
+  alert('已清除 '+orphans.length+' 筆孤兒標註。');};
 
 window.addEventListener('resize',()=>{if(state.current>=0)applyT();});
 </script>

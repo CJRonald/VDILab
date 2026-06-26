@@ -63,6 +63,7 @@
   .ang-more summary:hover{color:var(--text);}
   .nav{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 14px;border-top:1px solid var(--border);}
   .nav button.wide{grid-column:span 2;background:var(--accent);color:#fff;border:none;font-weight:600;}
+  .nav button.wide.saved{background:var(--ok);}
   #picker{position:absolute;inset:0;background:rgba(0,0,0,.92);z-index:100;display:flex;align-items:center;justify-content:center;}
   #picker .box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:24px;max-width:560px;}
   #picker h2{font-size:16px;margin-bottom:8px;} #picker p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px;}
@@ -189,7 +190,7 @@
     <div class="nav">
       <button id="n-prev">← 上一張</button>
       <button id="n-next">下一張 →</button>
-      <button id="n-save" class="wide">儲存本張 + 下一張 (Enter)</button>
+      <button id="n-save" class="wide">💾 儲存本張 (Enter)</button>
       <button id="n-export-json">Export JSON (SimAI 格式)</button>
       <button id="n-export-csv">Export 量測 CSV</button>
     </div>
@@ -228,7 +229,7 @@
     <section>
       <h3>⌨ 快捷鍵</h3>
       <ul>
-        <li><span class="hk">Enter</span> 存本張+下一張 · <span class="hk">Z</span> 復原</li>
+        <li><span class="hk">Enter</span> / 💾 鈕 存本張（不跳張，最後一張也能存）· 下一張用 → 鈕 · <span class="hk">Z</span> 復原</li>
         <li><span class="hk">R</span> 旋轉 90° · <span class="hk">微調 ±1°</span> 細轉</li>
         <li><span class="hk">V</span> 改 active 點 vis · <span class="hk">D</span>/<span class="hk">Del</span> 刪 active 點</li>
         <li><span class="hk">G</span> 網格開關 · <span class="hk">Shift+G</span> 準星回正中</li>
@@ -341,7 +342,7 @@ function clear(e){while(e.firstChild)e.removeChild(e.firstChild);}
 
 // HUD help
 $('hud-help').innerHTML='<span class="help-key">wheel</span> zoom · <span class="help-key">space</span>+drag pan · '+
-  '<span class="help-key">R</span> 旋轉 · <span class="help-key">G</span> 網格 · <span class="help-key">V</span> vis · <span class="help-key">Z</span> undo · <span class="help-key">Esc</span> 離開切線 · <span class="help-key">Enter</span> save';
+  '<span class="help-key">R</span> 旋轉 · <span class="help-key">G</span> 網格 · <span class="help-key">V</span> vis · <span class="help-key">Z</span> undo · <span class="help-key">Esc</span> 離開切線 · <span class="help-key">Enter</span> 存本張';
 
 // ===== Picker（3 來源：資料夾遞迴 / 多檔 / 拖曳）=====
 const fileInput=$('file-input'),dirInput=$('dir-input'),btnLoad=$('btn-load');let pending=[];
@@ -416,17 +417,16 @@ function applyT(){
   renderDots();renderMinimap();renderOverlay();}
 
 // ===== coord (含旋轉) =====
+// ⚠️ 必須精確反解 CSS canvas transform：transform-origin:0 0；transform: translate(pan) scale(zoom) rotate(rot)
+// 即 screen = pan + zoom · Rot_origin0(image)。旋轉繞原點(0,0)不繞中心 — 舊版誤用 imgW/2 中心項導致 rot≠0 時落點/反算分岔（轉著標的點 export 跑掉 261px@15°）
 function clientToImage(cx,cy){
   const r=stage.getBoundingClientRect();
-  // 反算：先去 pan，再去 scale，再去 rotate（繞 canvas 中心）
-  let x=(cx-r.left-state.panX)/state.zoom, y=(cy-r.top-state.panY)/state.zoom;
-  const cxC=state.imgW/2, cyC=state.imgH/2, a=-state.rot*Math.PI/180;
-  const dx=x-cxC, dy=y-cyC;
-  return {x:cxC+dx*Math.cos(a)-dy*Math.sin(a), y:cyC+dx*Math.sin(a)+dy*Math.cos(a)};}
+  const x=(cx-r.left-state.panX)/state.zoom, y=(cy-r.top-state.panY)/state.zoom;
+  const a=-state.rot*Math.PI/180;  // 反旋轉，繞原點
+  return {x:x*Math.cos(a)-y*Math.sin(a), y:x*Math.sin(a)+y*Math.cos(a)};}
 function imageToScreen(ix,iy){
-  const cxC=state.imgW/2,cyC=state.imgH/2,a=state.rot*Math.PI/180;
-  const dx=ix-cxC,dy=iy-cyC;
-  const rx=cxC+dx*Math.cos(a)-dy*Math.sin(a), ry=cyC+dx*Math.sin(a)+dy*Math.cos(a);
+  const a=state.rot*Math.PI/180;  // 正旋轉，繞原點
+  const rx=ix*Math.cos(a)-iy*Math.sin(a), ry=ix*Math.sin(a)+iy*Math.cos(a);
   return {x:state.panX+rx*state.zoom, y:state.panY+ry*state.zoom};}
 
 function renderDots(){
@@ -633,9 +633,9 @@ stage.addEventListener('wheel',e=>{e.preventDefault();const r=stage.getBoundingC
 document.addEventListener('keydown',e=>{
   if(e.code==='Space'){state.spaceHeld=true;stage.classList.add('panning');e.preventDefault();}
   else if(e.key==='z'||e.key==='Z')undo();
-  else if(e.key==='r'||e.key==='R'){state.rot=(state.rot+90)%360;applyT();}
+  else if(e.key==='r'||e.key==='R'){rotateTo(state.rot+90);}
   else if(e.key==='g'||e.key==='G'){if(e.shiftKey){recenterGrid();}else toggleGrid();}
-  else if(e.key==='Enter'){saveNext();}
+  else if(e.key==='Enter'){saveThis();}
   else if(e.key==='v'||e.key==='V'){const a=state.annotations[state.photos[state.current]?.name];
     const k=LANDMARKS[state.activeIdx].key;if(a&&a.landmarks[k]){const s=imageToScreen(a.landmarks[k].x,a.landmarks[k].y);openVis(s.x,s.y,k);}}
   else if(e.key==='Escape'){
@@ -737,11 +737,20 @@ function openLineMenu(x,y,key){const a=state.annotations[state.photos[state.curr
   $('vp-name').textContent=LINES[LINE_IDX[key]].label+'（切線）';
   const cur=a.lines[key].vis==null?1:a.lines[key].vis;
   vp.querySelectorAll('button').forEach(b=>b.classList.toggle('selected',parseFloat(b.getAttribute('data-v'))===cur));}
-$('t-rot-l').onclick=()=>{state.rot=(state.rot-90+360)%360;applyT();};
-$('t-rot-r').onclick=()=>{state.rot=(state.rot+90)%360;applyT();};
-$('t-rot-fine').onclick=()=>{state.rot=(state.rot+1)%360;applyT();};
-$('t-rot-fine-l').onclick=()=>{state.rot=(state.rot-1+360)%360;applyT();};
-$('t-rot-reset').onclick=()=>{state.rot=0;applyT();};
+// 旋轉時繞「影像中心目前的螢幕位置」旋轉，避免 origin:0,0 讓影像甩出視窗（座標已正確，這只調 pan 維持視覺置中）
+function rotateTo(newRot){
+  const cx=state.imgW/2, cy=state.imgH/2;
+  const before=imageToScreen(cx,cy);      // 旋轉前影像中心在螢幕的位置
+  state.rot=(newRot%360+360)%360;
+  const after=imageToScreen(cx,cy);       // 旋轉後（同 pan）影像中心會跑到哪
+  state.panX+=before.x-after.x;            // 補回 pan 讓中心留在原螢幕位置
+  state.panY+=before.y-after.y;
+  applyT();}
+$('t-rot-l').onclick=()=>rotateTo(state.rot-90);
+$('t-rot-r').onclick=()=>rotateTo(state.rot+90);
+$('t-rot-fine').onclick=()=>rotateTo(state.rot+1);
+$('t-rot-fine-l').onclick=()=>rotateTo(state.rot-1);
+$('t-rot-reset').onclick=()=>rotateTo(0);
 $('t-fit').onclick=fitView;
 function toggleGrid(){state.grid=!state.grid;state.gridLocked=false;  // 開啟預設「跟游標」態
   $('t-grid').classList.toggle('active',state.grid);renderOverlay();}
@@ -755,8 +764,12 @@ helpOv.addEventListener('click',e=>{if(e.target===helpOv)helpOv.classList.remove
 $('t-clear').onclick=clearAllPoints;
 $('n-prev').onclick=()=>showPhoto(state.current-1);
 $('n-next').onclick=()=>showPhoto(state.current+1);
-$('n-save').onclick=saveNext;
-function saveNext(){save();if(state.current<state.photos.length-1)showPhoto(state.current+1);else alert('已是最後一張，全部已存 localStorage。可 Export。');}
+$('n-save').onclick=saveThis;
+// 儲存本張（不跳張）— 任何張都能存，含最後一張；按了閃一下回饋讓你確認
+function saveThis(){save();
+  const b=$('n-save');const orig=b.textContent;
+  b.textContent='✅ 已存';b.classList.add('saved');
+  setTimeout(()=>{b.textContent=orig;b.classList.remove('saved');},900);}
 
 // ===== Export =====
 function download(name,content,type){const blob=new Blob([content],{type});const u=URL.createObjectURL(blob);

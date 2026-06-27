@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Tissue Mask Annotator — Micro_SURGIMAGE_ICG (build 2026-06-27)</title>
+<style>
+  :root{--bg:#1a1a1a;--panel:#252525;--panel2:#2f2f2f;--text:#e0e0e0;--muted:#888;
+    --accent:#4a9eff;--border:#383838;--ok:#4caf50;--warn:#ffa726;--flap:#4caf50;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+    height:100vh;overflow:hidden;user-select:none;}
+  #app{display:grid;grid-template-columns:1fr 340px;height:100vh;}
+  #stage{position:relative;background:#0a0a0a;overflow:hidden;cursor:crosshair;}
+  #stage.panning{cursor:grab;} #stage.panning.active{cursor:grabbing;}
+  #canvas{position:absolute;top:0;left:0;transform-origin:0 0;image-rendering:-webkit-optimize-contrast;}
+  svg#overlay{position:absolute;top:0;left:0;pointer-events:none;z-index:8;}
+  #hud{position:absolute;top:10px;left:10px;z-index:30;font-size:12px;background:rgba(0,0,0,.7);
+    padding:6px 10px;border-radius:4px;line-height:1.6;}
+  #hud strong{color:var(--accent);}
+  .help-key{font-family:ui-monospace,monospace;background:var(--border);padding:1px 5px;border-radius:3px;font-size:10px;}
+  #minimap{position:absolute;right:10px;bottom:10px;width:180px;height:180px;background:#000;
+    border:1px solid var(--border);overflow:hidden;z-index:20;opacity:.85;}
+  #minimap img{width:100%;height:100%;object-fit:contain;}
+  #minimap .vp{position:absolute;border:2px solid var(--accent);pointer-events:none;}
+  #panel{background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+  #panel header{padding:12px 14px;background:var(--panel2);border-bottom:1px solid var(--border);}
+  #panel header h1{font-size:14px;font-weight:600;} #panel header .sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .photo-info{padding:8px 14px;font-size:12px;border-bottom:1px solid var(--border);line-height:1.7;}
+  .photo-info .row{display:flex;justify-content:space-between;align-items:center;} .photo-info .row span:first-child{color:var(--muted);}
+  .toolbar{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--border);}
+  .toolbar button,.nav button{background:var(--panel2);color:var(--text);border:1px solid var(--border);
+    border-radius:5px;padding:5px 9px;font-size:12px;cursor:pointer;}
+  .toolbar button:hover,.nav button:hover{background:var(--border);}
+  .toolbar button.active{border-color:var(--accent);background:rgba(74,158,255,.16);color:#fff;}
+  #guide{padding:10px 14px;font-size:11px;line-height:1.6;color:var(--muted);border-top:1px solid var(--border);background:#1e1e1e;}
+  #guide b{color:var(--flap);}
+  .spacer{flex:1;}
+  .nav{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 14px;border-top:1px solid var(--border);}
+  .nav button.wide{grid-column:span 2;background:var(--accent);color:#fff;border:none;font-weight:600;}
+  .nav button.wide.saved{background:var(--ok);}
+  #picker{position:absolute;inset:0;background:rgba(0,0,0,.92);z-index:100;display:flex;align-items:center;justify-content:center;}
+  #picker .box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:24px;max-width:560px;}
+  #picker h2{font-size:16px;margin-bottom:8px;} #picker p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px;}
+  #picker code{background:var(--border);padding:1px 6px;border-radius:3px;font-size:12px;}
+  #file-list{max-height:200px;overflow-y:auto;margin:12px 0;font-size:12px;}
+  .file-row{padding:3px 0;color:var(--muted);}
+  #drop-zone{border:2px dashed var(--border);border-radius:8px;padding:22px;text-align:center;color:var(--muted);
+    font-size:13px;margin-bottom:12px;transition:.15s;line-height:1.6;}
+  #drop-zone.over{border-color:var(--accent);background:rgba(74,158,255,.08);color:var(--text);}
+  .pick-btns{display:flex;gap:10px;margin-bottom:6px;}
+  .pick-btn{flex:1;text-align:center;background:var(--panel2);border:1px solid var(--border);border-radius:6px;
+    padding:9px;font-size:12px;cursor:pointer;line-height:1.4;} .pick-btn:hover{background:var(--border);}
+  /* ===== Help overlay ===== */
+  #help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:300;display:none;
+    align-items:center;justify-content:center;padding:24px;}
+  #help-overlay.show{display:flex;}
+  .help-box{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:22px 26px;
+    max-width:860px;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.6);}
+  .help-box h2{font-size:16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:baseline;}
+  .help-box h2 .hk{font-size:11px;color:var(--muted);font-weight:400;}
+  .help-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 28px;}
+  .help-box section h3{font-size:13px;color:var(--accent);margin-bottom:6px;}
+  .help-box ul{list-style:none;font-size:12px;line-height:1.7;color:var(--text);}
+  .help-box li{padding-left:12px;position:relative;}
+  .help-box li::before{content:'·';position:absolute;left:2px;color:var(--muted);}
+  .help-box b{color:#fff;font-weight:600;}
+  .hk{font-family:ui-monospace,monospace;background:var(--border);padding:1px 5px;border-radius:3px;font-size:11px;color:var(--text);}
+  @media(max-width:680px){.help-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="canvas"></canvas>
+    <svg id="overlay"></svg>
+    <div id="hud"><span id="hud-line"></span><br><span id="hud-help"></span></div>
+    <div id="minimap"><img id="minimap-img" alt=""><div class="vp" id="minimap-vp"></div></div>
+  </div>
+  <div id="panel">
+    <header>
+      <h1>Tissue Mask 標註 — ICG flap</h1>
+      <div class="sub">polygon mask · 單類 flap · 純前端不上傳</div>
+    </header>
+    <div class="photo-info">
+      <div class="row"><span>Photo</span><span id="i-name">—</span></div>
+      <div class="row"><span>Polygons</span><span id="i-prog">0</span></div>
+    </div>
+    <div class="toolbar">
+      <button id="t-rot-l">⟲ 90°</button>
+      <button id="t-rot-r">⟳ 90°</button>
+      <button id="t-rot-fine-l" title="逆時針微調 1°">微調 −1°</button>
+      <button id="t-rot-fine">微調 +1°</button>
+      <button id="t-rot-reset">轉正歸零</button>
+      <button id="t-fit">符合視窗</button>
+      <button id="t-grid" title="網格 + 準星（G 開關 · 十字跟游標、點一下釘住 · Shift+G 回正中）">⊞ 網格</button>
+      <button id="t-click" title="點擊模式（F 切換）— 點擊逐一加頂點，雙擊或回起點封口（直邊好用）">🖊 點擊</button>
+      <button id="t-freehand" title="描邊模式（F 切換）— 按住拖曳沿輪廓描，放開不閉合可分段續描；雙擊或回起點封口（彎邊好用）">✏️ 描邊</button>
+      <button id="t-help" title="使用說明（?）">？ 說明</button>
+      <button id="t-clear">🗑 清除全部 polygon</button>
+    </div>
+    <div id="guide">🎯 <b>只圈 flap（皮瓣/組織）= 解剖邊界</b>，與螢光亮暗無關。暗的皮瓣也要圈進去（灌流好壞是 Stage2 機器算的）。不要只描亮的螢光區。</div>
+    <div class="spacer"></div>
+    <div class="nav">
+      <button id="n-prev">← 上一張</button>
+      <button id="n-next">下一張 →</button>
+      <button id="n-save" class="wide">💾 儲存本張 (Enter)</button>
+      <button id="n-export-json" class="wide">Export JSON (mask)</button>
+      <button id="n-purge-orphans" class="wide" style="display:none;">🧹 清非本批照片 (<span id="orphan-n">0</span> 筆孤兒)</button>
+    </div>
+  </div>
+</div>
+
+<div id="picker"><div class="box">
+  <h2>載入照片</h2>
+  <p style="margin-bottom:8px;"><b>Rater ID</b>（你的標註者代號，用於 inter/intra-rater；不同 rater 各自不互蓋）：</p>
+  <input type="text" id="rater-id" placeholder="例：ronald / hsiao / ra1 / ronald_r2" style="width:100%;padding:7px 9px;margin-bottom:14px;background:var(--panel2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:13px;">
+  <p>三種載入方式（可一次帶全部）。<br>
+  <b>照片只在你本機處理、永不上傳。</b></p>
+  <div id="drop-zone">📁 拖曳照片 / 資料夾到這裡<br><small>或用下方按鈕</small></div>
+  <div class="pick-btns">
+    <label class="pick-btn">📂 選整個資料夾（含子資料夾）
+      <input type="file" id="dir-input" webkitdirectory directory multiple accept="image/*" hidden></label>
+    <label class="pick-btn">🖼 選多個檔案
+      <input type="file" id="file-input" multiple accept="image/*" hidden></label>
+  </div>
+  <div id="file-list"></div>
+  <button id="btn-load" disabled>Load</button>
+</div></div>
+
+<div id="help-overlay"><div class="help-box">
+  <h2>使用說明 <span class="hk">Esc / 點空白關閉</span></h2>
+  <div class="help-grid">
+    <section>
+      <h3>🎯 標什麼</h3>
+      <ul>
+        <li><b>只圈 flap（皮瓣/組織）區域 = 解剖邊界</b>，與螢光亮暗無關</li>
+        <li>暗的皮瓣也要圈進去（灌流好壞是 Stage2 機器算的，不是你標的）</li>
+        <li>不要只描亮的螢光區（那會錯標成 ICG mask）</li>
+      </ul>
+    </section>
+    <section>
+      <h3>🖱 基本操作</h3>
+      <ul>
+        <li><b>點擊模式</b>：點擊逐一加頂點（直邊好用）</li>
+        <li><b>✏️ 描邊模式</b>（<span class="hk">F</span> 或鈕）：<b>按住拖曳</b>沿輪廓描（彎邊好用）；<b>放開不閉合</b>，可再拖下一段、分次描完</li>
+        <li><b>閉合</b>（兩模式共用）：<b>雙擊</b> 或 拖/點回<b>第一頂點（大白點）</b> → 封口成 polygon</li>
+        <li>描邊與點擊<b>可交替</b>用在同一個 polygon（彎處拖、直處點）；<span class="hk">Esc</span> 丟棄未閉合的</li>
+        <li>所有頂點都可事後選取/拖/刪</li>
+        <li>點 polygon <b>內部</b> → 選取（亮起 + 顯示頂點）</li>
+        <li>拖頂點 → 調整；右鍵頂點 → 刪除（保留 ≥3 點）</li>
+        <li><b>滾輪</b>縮放 · <span class="hk">空白鍵</span>+拖曳 平移</li>
+      </ul>
+    </section>
+    <section>
+      <h3>⌨ 快捷鍵</h3>
+      <ul>
+        <li><span class="hk">click</span> 加頂點 · <span class="hk">dblclick</span> 閉合 · <span class="hk">F</span> 描邊模式 · <span class="hk">Esc</span> 取消繪製中</li>
+        <li><span class="hk">Z</span> 復原 · <span class="hk">D</span>/<span class="hk">Del</span> 刪選取的 polygon</li>
+        <li><span class="hk">R</span> 旋轉 90° · 微調 <span class="hk">±1°</span> · <span class="hk">Enter</span> 存本張</li>
+        <li><span class="hk">G</span> 網格開關 · <span class="hk">Shift+G</span> 準星回正中</li>
+      </ul>
+    </section>
+    <section>
+      <h3>⊞ 網格 + 準星</h3>
+      <ul>
+        <li>方格<b>鎖螢幕</b>恆水平垂直（不跟影像轉）→ 當基準把歪圖<b>轉正</b></li>
+        <li>青色十字準星<b>跟游標</b>移動 → <b>點一下釘住</b>（此點不落頂點）</li>
+        <li>釘住後移動游標 → 自動解鎖再跟</li>
+      </ul>
+    </section>
+    <section>
+      <h3>💾 Export</h3>
+      <ul>
+        <li><b>Export JSON (mask)</b>：COCO-style 點座標（原圖座標，schema <code>mask_v1</code>）</li>
+        <li>訓練端另跑 <code>json_to_mask.py</code> rasterize 成 PNG</li>
+        <li>標前先填 <b>Rater ID</b>（不同 rater 不互蓋）</li>
+      </ul>
+    </section>
+    <section>
+      <h3>🔒 隱私</h3>
+      <ul>
+        <li>照片<b>只在你本機處理、永不上傳</b>（純前端）</li>
+        <li>標註存瀏覽器 localStorage；換機器需自行 Export 帶走</li>
+        <li>Export 自動跳過無 polygon 的空白照片</li>
+      </ul>
+    </section>
+  </div>
+</div></div>
+
+<script>
+"use strict";
+console.log('%c[Tissue Mask Annotator] Micro_SURGIMAGE_ICG · polygon mask · single class flap · build 2026-06-27','color:#4caf50;font-weight:bold');
+
+const state={photos:[],current:-1,annotations:{},zoom:1,panX:0,panY:0,rot:0,imgW:0,imgH:0,
+  spaceHeld:false,panning:false,panStart:null,history:[],raterId:'anon',
+  grid:false,gridLocked:false,gridCursor:null,
+  draft:null,selectedPoly:null,dragVert:null,
+  freehand:false,tracing:false};
+const FLAP_COLOR='#4caf50';   // single class colour
+const CLOSE_DIST=12;          // screen px: click within this of first vertex → close polygon
+const TRACE_MIN_DIST=6;       // image px: min spacing between sampled freehand vertices
+const $=id=>document.getElementById(id);
+const stage=$('stage'),canvas=$('canvas'),ctx=canvas.getContext('2d'),overlay=$('overlay');
+
+function el(t,a,...k){const e=document.createElement(t);if(a)for(const[x,v]of Object.entries(a)){
+  if(x==='class')e.className=v;else if(x==='style')e.setAttribute('style',v);
+  else if(x.startsWith('on'))e.addEventListener(x.slice(2),v);else e.setAttribute(x,v);}
+  for(const c of k){if(c==null)continue;e.appendChild(typeof c==='object'?c:document.createTextNode(String(c)));}return e;}
+function clear(e){while(e.firstChild)e.removeChild(e.firstChild);}
+function svgEl(tag,attrs){const e=document.createElementNS('http://www.w3.org/2000/svg',tag);
+  for(const[k,v]of Object.entries(attrs))e.setAttribute(k,v);return e;}
+
+// HUD help
+$('hud-help').innerHTML='<span class="help-key">wheel</span> zoom · <span class="help-key">space</span>+drag pan · '+
+  '<span class="help-key">click</span> 加頂點 · <span class="help-key">dblclick</span> 閉合 · <span class="help-key">F</span> 描邊 · '+
+  '<span class="help-key">R</span> 旋轉 · <span class="help-key">G</span> 網格 · <span class="help-key">Z</span> undo · '+
+  '<span class="help-key">D</span> 刪 polygon · <span class="help-key">Enter</span> 存';
+
+// ===== Picker（3 來源：資料夾遞迴 / 多檔 / 拖曳）=====
+const fileInput=$('file-input'),dirInput=$('dir-input'),btnLoad=$('btn-load');let pending=[];
+const isImg=f=>/\.(jpe?g|png)$/i.test(f.name);
+// dedup by name+size，多來源累加不重複
+function setPending(files){
+  const seen=new Set(pending.map(f=>f.name+'|'+f.size));
+  files.filter(isImg).forEach(f=>{const k=f.name+'|'+f.size;if(!seen.has(k)){seen.add(k);pending.push(f);}});
+  pending.sort((a,b)=>a.name.localeCompare(b.name));
+  clear($('file-list'));
+  pending.forEach(f=>$('file-list').appendChild(el('div',{class:'file-row'},f.name)));
+  btnLoad.disabled=!pending.length;btnLoad.textContent='Load '+pending.length+' photos';}
+fileInput.addEventListener('change',e=>setPending(Array.from(e.target.files)));
+dirInput.addEventListener('change',e=>setPending(Array.from(e.target.files)));
+
+// 拖曳（含資料夾遞迴 webkitGetAsEntry）
+const dz=$('drop-zone');
+['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();if(ev!=='drop')dz.classList.remove('over');}));
+function readEntry(entry,out){return new Promise(res=>{
+  if(entry.isFile){entry.file(f=>{out.push(f);res();},()=>res());}
+  else if(entry.isDirectory){const rd=entry.createReader();const all=[];
+    const readBatch=()=>rd.readEntries(ents=>{
+      if(!ents.length){Promise.all(all.map(e=>readEntry(e,out))).then(res);return;}
+      all.push(...ents);readBatch();},()=>res());
+    readBatch();}
+  else res();});}
+dz.addEventListener('drop',async e=>{dz.classList.remove('over');
+  const items=Array.from(e.dataTransfer.items||[]);
+  const entries=items.map(it=>it.webkitGetAsEntry&&it.webkitGetAsEntry()).filter(Boolean);
+  if(entries.length){const out=[];await Promise.all(entries.map(en=>readEntry(en,out)));setPending(out);}
+  else setPending(Array.from(e.dataTransfer.files||[]));});
+btnLoad.addEventListener('click',()=>{
+  const rid=($('rater-id').value||'').trim().replace(/[^a-zA-Z0-9_\-]/g,'_');
+  state.raterId=rid||'anon';
+  state.photos=pending.map(f=>({file:f,name:f.name,url:URL.createObjectURL(f)}));
+  $('picker').style.display='none';loadCache();showPhoto(0);refreshOrphanBtn();
+  document.querySelector('#panel header .sub').textContent='polygon mask · rater: '+state.raterId;});
+
+// ===== localStorage（key 帶 rater，inter/intra-rater 各自不互蓋）=====
+const LS_BASE='micro_surgimage_icg_mask';
+function lsKey(){return LS_BASE+'__'+state.raterId;}
+function loadCache(){try{state.annotations=JSON.parse(localStorage.getItem(lsKey())||'{}');}catch{state.annotations={};}}
+function save(){localStorage.setItem(lsKey(),JSON.stringify(state.annotations));}
+// 一筆 annotation 是否「有實際內容」（≥1 個 ≥3 點的 polygon）→ Export 跳過空白 placeholder
+function hasContent(a){return !!a&&a.polygons&&a.polygons.length>0&&a.polygons.some(pg=>pg.points&&pg.points.length>=3);}
+
+// ===== Photo =====
+function showPhoto(idx){
+  if(idx<0||idx>=state.photos.length)return;state.current=idx;const p=state.photos[idx];
+  const img=new Image();img.onload=()=>{
+    state.imgW=img.naturalWidth;state.imgH=img.naturalHeight;
+    canvas.width=state.imgW;canvas.height=state.imgH;ctx.drawImage(img,0,0);
+    canvas.style.width=state.imgW+'px';canvas.style.height=state.imgH+'px';
+    $('minimap-img').src=p.url;state.rot=0;
+    if(!state.annotations[p.name])state.annotations[p.name]={photoName:p.name,polygons:[],startTime:Date.now()};
+    if(!state.annotations[p.name].polygons)state.annotations[p.name].polygons=[];
+    if(!state.annotations[p.name].gridMid)state.annotations[p.name].gridMid={x:state.imgW/2,y:state.imgH/2};
+    state.annotations[p.name].width=state.imgW;state.annotations[p.name].height=state.imgH;
+    state.draft=null;state.selectedPoly=null;state.dragVert=null;state.history=[];
+    fitView();
+    renderAll();};
+  img.src=p.url;}
+function fitView(){const r=stage.getBoundingClientRect();const f=Math.min(r.width/state.imgW,r.height/state.imgH);
+  state.zoom=Math.min(f*0.95,4);state.panX=(r.width-state.imgW*state.zoom)/2;state.panY=(r.height-state.imgH*state.zoom)/2;applyT();}
+function applyT(){
+  canvas.style.transform=`translate(${state.panX}px,${state.panY}px) scale(${state.zoom}) rotate(${state.rot}deg)`;
+  renderMinimap();renderOverlay();}
+
+// ===== coord (含旋轉) =====
+// ⚠️ 必須精確反解 CSS canvas transform：transform-origin:0 0；transform: translate(pan) scale(zoom) rotate(rot)
+// 即 screen = pan + zoom · Rot_origin0(image)。旋轉繞原點(0,0)不繞中心 — 中心項會讓 rot≠0 時落點/反算分岔
+function clientToImage(cx,cy){
+  const r=stage.getBoundingClientRect();
+  const x=(cx-r.left-state.panX)/state.zoom, y=(cy-r.top-state.panY)/state.zoom;
+  const a=-state.rot*Math.PI/180;  // 反旋轉，繞原點
+  return {x:x*Math.cos(a)-y*Math.sin(a), y:x*Math.sin(a)+y*Math.cos(a)};}
+function imageToScreen(ix,iy){
+  const a=state.rot*Math.PI/180;  // 正旋轉，繞原點
+  const rx=ix*Math.cos(a)-iy*Math.sin(a), ry=ix*Math.sin(a)+iy*Math.cos(a);
+  return {x:state.panX+rx*state.zoom, y:state.panY+ry*state.zoom};}
+
+function renderMinimap(){
+  const r=stage.getBoundingClientRect(),mm=$('minimap').getBoundingClientRect(),vp=$('minimap-vp');
+  const ir=state.imgW/state.imgH,mr=mm.width/mm.height;let w,h,ox,oy;
+  if(ir>mr){w=mm.width;h=mm.width/ir;ox=0;oy=(mm.height-h)/2;}else{h=mm.height;w=mm.height*ir;oy=0;ox=(mm.width-w)/2;}
+  const vl=-state.panX/state.zoom,vt=-state.panY/state.zoom,vw=r.width/state.zoom,vh=r.height/state.zoom,sc=w/state.imgW;
+  vp.style.left=(ox+vl*sc)+'px';vp.style.top=(oy+vt*sc)+'px';vp.style.width=(vw*sc)+'px';vp.style.height=(vh*sc)+'px';}
+
+// 網格 + 中線 overlay（螢幕座標 → 永遠水平垂直，不跟影像旋轉；當正交基準把歪圖轉正）
+function drawGrid(){
+  const r=stage.getBoundingClientRect();
+  const svgLine=(x1,y1,x2,y2,col,w,dash)=>{
+    const e=document.createElementNS('http://www.w3.org/2000/svg','line');
+    e.setAttribute('x1',x1);e.setAttribute('y1',y1);e.setAttribute('x2',x2);e.setAttribute('y2',y2);
+    e.setAttribute('stroke',col);e.setAttribute('stroke-width',w);if(dash)e.setAttribute('stroke-dasharray',dash);
+    overlay.appendChild(e);};
+  const N=48,stepImg=Math.max(state.imgW,state.imgH)/N,step=stepImg*state.zoom;
+  if(step>=3){
+    const o=imageToScreen(0,0);
+    let x0=o.x%step;if(x0>0)x0-=step;for(let x=x0;x<=r.width;x+=step)svgLine(x,0,x,r.height,'rgba(128,128,128,0.4)',0.5);
+    let y0=o.y%step;if(y0>0)y0-=step;for(let y=y0;y<=r.height;y+=step)svgLine(0,y,r.width,y,'rgba(128,128,128,0.4)',0.5);}
+  const a=state.annotations[state.photos[state.current]?.name];
+  let sm;
+  if(state.gridLocked){const m=(a&&a.gridMid)||{x:state.imgW/2,y:state.imgH/2};sm=imageToScreen(m.x,m.y);}
+  else sm=state.gridCursor||{x:r.width/2,y:r.height/2};
+  const col=state.gridLocked?'rgba(74,222,238,0.85)':'rgba(74,222,238,0.55)';
+  svgLine(sm.x,0,sm.x,r.height,col,1.6,'8 5');
+  svgLine(0,sm.y,r.width,sm.y,col,1.6,'8 5');
+  const h=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  h.setAttribute('cx',sm.x);h.setAttribute('cy',sm.y);h.setAttribute('r',state.gridLocked?'4':'3');
+  h.setAttribute('fill',col);h.setAttribute('stroke','#000');h.setAttribute('stroke-width','1');overlay.appendChild(h);}
+
+// ===== Overlay：grid + committed polygons + draft =====
+function renderOverlay(){
+  const r=stage.getBoundingClientRect();overlay.setAttribute('width',r.width);overlay.setAttribute('height',r.height);
+  clear(overlay);const p=state.photos[state.current];if(!p)return;const a=state.annotations[p.name];
+  if(state.grid)drawGrid();
+  // committed polygons
+  (a.polygons||[]).forEach((pg,i)=>{
+    const pts=pg.points.map(([x,y])=>{const s=imageToScreen(x,y);return s.x+','+s.y;}).join(' ');
+    const sel=(i===state.selectedPoly);
+    overlay.appendChild(svgEl('polygon',{points:pts,fill:FLAP_COLOR,
+      'fill-opacity':sel?'0.30':'0.18',stroke:FLAP_COLOR,'stroke-width':sel?'2.5':'1.8'}));
+    if(sel)pg.points.forEach(([x,y])=>{const s=imageToScreen(x,y);
+      overlay.appendChild(svgEl('circle',{cx:s.x,cy:s.y,r:'4.5',fill:'#fff',stroke:FLAP_COLOR,'stroke-width':'2'}));});
+  });
+  // draft being drawn (click 點 + freehand 拖，共用同一 draft；放開不閉合，需手動封口)
+  if(state.draft&&state.draft.points.length){
+    const sp=state.draft.points.map(([x,y])=>{const s=imageToScreen(x,y);return [s.x,s.y];});
+    // 連線：點多時用平滑實線（freehand 風格），少時用虛線（看得出逐點）
+    const many=sp.length>=8;
+    if(sp.length>=2)overlay.appendChild(svgEl('polyline',{
+      points:sp.map(q=>q.join(',')).join(' '),fill:FLAP_COLOR,'fill-opacity':many?'0.12':'0',
+      stroke:FLAP_COLOR,'stroke-width':many?'2.4':'2',
+      'stroke-linejoin':'round','stroke-linecap':'round',...(many?{}:{'stroke-dasharray':'5 4'})}));
+    // 第一頂點：大白點（拖/點回此處可閉合）；其餘頂點點多時不畫，少時畫小點
+    sp.forEach(([x,y],i)=>{if(i!==0&&many)return;
+      overlay.appendChild(svgEl('circle',{cx:x,cy:y,r:i===0?'6':'3.5',
+        fill:i===0?'#fff':FLAP_COLOR,stroke:FLAP_COLOR,'stroke-width':'2'}));});
+  }
+}
+
+function updateInfo(){const a=state.annotations[state.photos[state.current]?.name];
+  $('i-name').textContent=state.photos[state.current]?.name||'—';
+  const n=a?a.polygons.length:0;
+  const draft=state.draft?` (+1 繪製中:${state.draft.points.length}點，雙擊/點起點閉合)`:'';
+  $('i-prog').textContent=n+draft;}
+
+function renderAll(){applyT();updateInfo();}
+
+// ===== point in polygon (image coords) =====
+function pointInPoly(px,py,pts){let inside=false;
+  for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+    const xi=pts[i][0],yi=pts[i][1],xj=pts[j][0],yj=pts[j][1];
+    if(((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/(yj-yi)+xi))inside=!inside;}
+  return inside;}
+
+// ===== Place vertices / select polygon =====
+stage.addEventListener('click',e=>{
+  if(state.spaceHeld||state.panning)return;
+  if(state.freehand)return;  // 描邊模式由 mousedown/move/up 處理，click 不落點
+  // grid lock first-click（此點不落頂點）
+  if(state.grid&&!state.gridLocked){const a2=state.annotations[state.photos[state.current]?.name];
+    const p2=clientToImage(e.clientX,e.clientY);if(a2){a2.gridMid={x:p2.x,y:p2.y};save();}
+    state.gridLocked=true;renderOverlay();return;}
+  const a=state.annotations[state.photos[state.current].name];
+  // 無 draft 時：先試選取既有 polygon
+  if(!state.draft){
+    const ip=clientToImage(e.clientX,e.clientY);
+    let hit=null;
+    for(let i=a.polygons.length-1;i>=0;i--){if(pointInPoly(ip.x,ip.y,a.polygons[i].points)){hit=i;break;}}
+    if(hit!==null){state.selectedPoly=hit;renderAll();return;}  // 選取，不開始 draft
+    state.selectedPoly=null;
+    state.draft={points:[]};
+  }
+  const p=clientToImage(e.clientX,e.clientY);
+  // 近第一頂點且 ≥3 點 → 閉合
+  if(state.draft.points.length>=3){
+    const r=stage.getBoundingClientRect();
+    const s0=imageToScreen(state.draft.points[0][0],state.draft.points[0][1]);
+    if(Math.hypot(e.clientX-r.left-s0.x,e.clientY-r.top-s0.y)<CLOSE_DIST){closeDraft();return;}}
+  pushHistory(a);
+  state.draft.points.push([Math.round(p.x),Math.round(p.y)]);
+  renderOverlay();updateInfo();
+});
+function closeDraft(){const a=state.annotations[state.photos[state.current].name];
+  if(!state.draft||state.draft.points.length<3){state.draft=null;renderOverlay();updateInfo();return;}
+  pushHistory(a);
+  const id=(a.polygons.reduce((m,pg)=>Math.max(m,pg.id||0),0))+1;
+  a.polygons.push({id,label:'flap',points:state.draft.points});
+  state.draft=null;state.selectedPoly=a.polygons.length-1;save();renderAll();}
+stage.addEventListener('dblclick',e=>{e.preventDefault();if(state.draft)closeDraft();});
+
+// 右鍵頂點 → 刪除（保留 ≥3）
+stage.addEventListener('contextmenu',e=>{
+  const a=state.annotations[state.photos[state.current]?.name];if(!a||state.selectedPoly===null)return;
+  const pg=a.polygons[state.selectedPoly];if(!pg)return;const r=stage.getBoundingClientRect();
+  for(let v=0;v<pg.points.length;v++){const s=imageToScreen(pg.points[v][0],pg.points[v][1]);
+    if(Math.hypot(e.clientX-r.left-s.x,e.clientY-r.top-s.y)<10){e.preventDefault();
+      if(pg.points.length<=3)return;  // 保留 ≥3；刪整塊用 D
+      pushHistory(a);pg.points.splice(v,1);save();renderAll();return;}}});
+
+// ===== zoom / pan / vertex drag =====
+stage.addEventListener('wheel',e=>{e.preventDefault();const r=stage.getBoundingClientRect();
+  const mx=e.clientX-r.left,my=e.clientY-r.top;const f=e.deltaY<0?1.12:1/1.12;
+  const nz=Math.max(0.1,Math.min(12,state.zoom*f));
+  state.panX=mx-(mx-state.panX)*(nz/state.zoom);state.panY=my-(my-state.panY)*(nz/state.zoom);state.zoom=nz;applyT();},{passive:false});
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'){state.spaceHeld=true;stage.classList.add('panning');e.preventDefault();}
+  else if(e.key==='z'||e.key==='Z')undo();
+  else if(e.key==='r'||e.key==='R'){rotateTo(state.rot+90);}
+  else if(e.key==='g'||e.key==='G'){if(e.shiftKey){recenterGrid();}else toggleGrid();}
+  else if(e.key==='f'||e.key==='F'){toggleFreehand();}
+  else if(e.key==='Enter'){saveThis();}
+  else if(e.key==='Escape'){
+    if(helpOv.classList.contains('show')){helpOv.classList.remove('show');return;}
+    if(state.draft||state.tracing){state.draft=null;state.tracing=false;renderOverlay();updateInfo();}}
+  else if(e.key==='d'||e.key==='D'||e.key==='Delete'||e.key==='Backspace'){
+    if(state.draft)return;e.preventDefault();
+    const a=state.annotations[state.photos[state.current]?.name];
+    if(a&&state.selectedPoly!==null){pushHistory(a);a.polygons.splice(state.selectedPoly,1);
+      state.selectedPoly=null;save();renderAll();}}});
+document.addEventListener('keyup',e=>{if(e.code==='Space'){state.spaceHeld=false;state.panning=false;stage.classList.remove('panning','active');}});
+stage.addEventListener('mousedown',e=>{
+  if(state.spaceHeld){state.panning=true;stage.classList.add('active');state.panStart={x:e.clientX-state.panX,y:e.clientY-state.panY};return;}
+  // 描邊模式：按住沿輪廓採樣，累加進「當前 draft」（不自動閉合，可分段描）
+  if(state.freehand&&e.button===0){
+    const a=state.annotations[state.photos[state.current]?.name];
+    // 若起點落在現有 draft 第一頂點附近且 ≥3 點 → 視為閉合（拖回起點封口）
+    if(state.draft&&state.draft.points.length>=3){
+      const r=stage.getBoundingClientRect();
+      const s0=imageToScreen(state.draft.points[0][0],state.draft.points[0][1]);
+      if(Math.hypot(e.clientX-r.left-s0.x,e.clientY-r.top-s0.y)<CLOSE_DIST){closeDraft();return;}}
+    const ip=clientToImage(e.clientX,e.clientY);
+    if(a)pushHistory(a);
+    if(!state.draft)state.draft={points:[]};
+    state.draft.points.push([Math.round(ip.x),Math.round(ip.y)]);
+    state.tracing=true;  // flag: 正在拖（mousemove 採樣到 draft）
+    renderOverlay();updateInfo();e.preventDefault();return;}
+  // 拖選取 polygon 的頂點
+  if(state.selectedPoly!==null&&!state.draft&&e.button===0){
+    const a=state.annotations[state.photos[state.current]?.name];const pg=a&&a.polygons[state.selectedPoly];
+    if(pg){const r=stage.getBoundingClientRect();
+      for(let v=0;v<pg.points.length;v++){const s=imageToScreen(pg.points[v][0],pg.points[v][1]);
+        if(Math.hypot(e.clientX-r.left-s.x,e.clientY-r.top-s.y)<8){
+          pushHistory(a);state.dragVert={poly:state.selectedPoly,vert:v};e.preventDefault();return;}}}}});
+document.addEventListener('mousemove',e=>{
+  if(state.panning&&state.panStart){state.panX=e.clientX-state.panStart.x;state.panY=e.clientY-state.panStart.y;applyT();return;}
+  // 描邊：拖曳時採樣進當前 draft（與上一點距離 ≥ TRACE_MIN_DIST 才收，避免過密）
+  if(state.tracing&&state.draft){const ip=clientToImage(e.clientX,e.clientY);
+    const last=state.draft.points[state.draft.points.length-1];
+    if(!last||Math.hypot(ip.x-last[0],ip.y-last[1])>=TRACE_MIN_DIST){
+      state.draft.points.push([Math.round(ip.x),Math.round(ip.y)]);renderOverlay();updateInfo();}
+    return;}
+  if(state.dragVert){const ip=clientToImage(e.clientX,e.clientY);
+    const a=state.annotations[state.photos[state.current]?.name];
+    a.polygons[state.dragVert.poly].points[state.dragVert.vert]=[Math.round(ip.x),Math.round(ip.y)];
+    renderOverlay();return;}
+  // 準星十字：grid 開、未按空白鍵時跟游標
+  if(state.grid&&!state.spaceHeld){
+    const r=stage.getBoundingClientRect();state.gridCursor={x:e.clientX-r.left,y:e.clientY-r.top};
+    if(state.gridLocked)state.gridLocked=false;
+    renderOverlay();}});
+document.addEventListener('mouseup',()=>{
+  // 描邊放開：只停止採樣，「不閉合」— draft 保留，可再拖下一段 / 點補點 / 最後手動閉合
+  if(state.tracing){state.tracing=false;save();renderOverlay();updateInfo();return;}
+  if(state.dragVert){state.dragVert=null;save();renderOverlay();return;}
+  state.panning=false;stage.classList.remove('active');});
+
+// history 快照（polygon-aware）
+function pushHistory(a){state.history.push({polygons:JSON.parse(JSON.stringify(a.polygons||[]))});}
+function undo(){const a=state.annotations[state.photos[state.current]?.name];if(!a||!state.history.length)return;
+  const h=state.history.pop();a.polygons=h.polygons||[];
+  state.draft=null;state.selectedPoly=null;state.dragVert=null;save();renderAll();}
+// 清除整張所有 polygon（需確認）
+function clearAllPoints(){const a=state.annotations[state.photos[state.current]?.name];
+  if(!a||!a.polygons.length)return;
+  if(!confirm('清除這張照片所有 polygon？（可 Z 復原）'))return;
+  pushHistory(a);a.polygons=[];state.draft=null;state.selectedPoly=null;save();renderAll();}
+
+// ===== toolbar =====
+// 旋轉時繞「影像中心目前的螢幕位置」旋轉，避免 origin:0,0 讓影像甩出視窗（座標已正確，這只調 pan 維持視覺置中）
+function rotateTo(newRot){
+  const cx=state.imgW/2, cy=state.imgH/2;
+  const before=imageToScreen(cx,cy);
+  state.rot=(newRot%360+360)%360;
+  const after=imageToScreen(cx,cy);
+  state.panX+=before.x-after.x;
+  state.panY+=before.y-after.y;
+  applyT();}
+$('t-rot-l').onclick=()=>rotateTo(state.rot-90);
+$('t-rot-r').onclick=()=>rotateTo(state.rot+90);
+$('t-rot-fine').onclick=()=>rotateTo(state.rot+1);
+$('t-rot-fine-l').onclick=()=>rotateTo(state.rot-1);
+$('t-rot-reset').onclick=()=>rotateTo(0);
+$('t-fit').onclick=fitView;
+function toggleGrid(){state.grid=!state.grid;state.gridLocked=false;
+  $('t-grid').classList.toggle('active',state.grid);renderOverlay();}
+function recenterGrid(){const a=state.annotations[state.photos[state.current]?.name];if(!a)return;
+  a.gridMid={x:state.imgW/2,y:state.imgH/2};state.gridLocked=true;save();
+  if(!state.grid){state.grid=true;$('t-grid').classList.add('active');}renderOverlay();}
+$('t-grid').onclick=toggleGrid;
+function setMode(freehand){
+  // 切模式不丟未閉合 draft（描邊/點擊可交替用同一 draft），只停止拖曳採樣旗標
+  state.freehand=freehand;state.tracing=false;
+  $('t-freehand').classList.toggle('active',state.freehand);
+  $('t-click').classList.toggle('active',!state.freehand);
+  stage.style.cursor=state.freehand?'cell':'crosshair';renderAll();}
+function toggleFreehand(){setMode(!state.freehand);}  // F 鍵：兩模式互切
+$('t-click').onclick=()=>setMode(false);
+$('t-freehand').onclick=()=>setMode(true);
+setMode(false);  // 預設點擊模式（讓 🖊 點擊鈕一進來就亮）
+const helpOv=$('help-overlay');
+$('t-help').onclick=()=>helpOv.classList.add('show');
+helpOv.addEventListener('click',e=>{if(e.target===helpOv)helpOv.classList.remove('show');});
+$('t-clear').onclick=clearAllPoints;
+$('n-prev').onclick=()=>showPhoto(state.current-1);
+$('n-next').onclick=()=>showPhoto(state.current+1);
+$('n-save').onclick=saveThis;
+// 儲存本張（不跳張）— 按了閃一下回饋
+function saveThis(){save();
+  const b=$('n-save');const orig=b.textContent;
+  b.textContent='✅ 已存';b.classList.add('saved');
+  setTimeout(()=>{b.textContent=orig;b.classList.remove('saved');},900);}
+
+// ===== Export（COCO-style mask JSON）=====
+function download(name,content,type){const blob=new Blob([content],{type});const u=URL.createObjectURL(blob);
+  const a=el('a',{href:u,download:name});document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);}
+$('n-export-json').onclick=()=>{
+  const out={rater_id:state.raterId,schema:'mask_v1',exported:new Date().toISOString(),
+    label_classes:['flap'],photos:{}};
+  for(const[name,a]of Object.entries(state.annotations)){
+    if(!hasContent(a))continue;  // 跳過空白 / <3 點殼
+    out.photos[name]={
+      width:a.width||null,
+      height:a.height||null,
+      polygons:a.polygons.filter(pg=>pg.points.length>=3)
+        .map(pg=>({id:pg.id,label:pg.label||'flap',points:pg.points}))};
+  }
+  download('masks_'+state.raterId+'_mask_v1.json',JSON.stringify(out,null,2),'application/json');};
+
+// ===== 孤兒照片清理：localStorage 裡不在「目前載入清單」的 annotation key =====
+function orphanKeys(){const loaded=new Set(state.photos.map(p=>p.name));
+  return Object.keys(state.annotations).filter(k=>!loaded.has(k));}
+function refreshOrphanBtn(){const btn=$('n-purge-orphans');if(!btn)return;
+  const orphans=orphanKeys();
+  if(orphans.length){$('orphan-n').textContent=orphans.length;btn.style.display='';}
+  else btn.style.display='none';}
+$('n-purge-orphans').onclick=()=>{
+  const orphans=orphanKeys();if(!orphans.length)return;
+  const sample=orphans.slice(0,6).join('\n');
+  if(!confirm('清除 '+orphans.length+' 筆「不在目前載入清單」的孤兒標註？\n（這些是舊 session / 誤載殘留，清掉避免污染 Export）\n\n'+sample+(orphans.length>6?'\n…':'')))return;
+  orphans.forEach(k=>delete state.annotations[k]);
+  save();refreshOrphanBtn();
+  alert('已清除 '+orphans.length+' 筆孤兒標註。');};
+
+window.addEventListener('resize',()=>{if(state.current>=0)applyT();});
+</script>
+</body>
+</html>

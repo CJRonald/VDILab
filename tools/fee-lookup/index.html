@@ -1,12 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="/favicon-32.png" sizes="32x32">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>手術點數查詢 — 健保支付標準 × 長庚自費</title>
 </head>
 <body>
@@ -71,10 +68,13 @@
   }
   input[type=search]:focus{outline:2px solid var(--focus);outline-offset:1px;border-color:transparent}
   .hints{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
-  .hints span{font-size:12px;color:var(--ink-3);margin-right:2px}
+  .hints span{font-size:12.5px;color:var(--ink-2);margin-right:2px}
+  /* ⚠️ 觸控目標：本工具主要在門診／開刀房用手機單手查，
+     chip 與 filter 按鈕原本僅約 29–31px，低於 44px 建議值，站著點很容易失手。 */
   .chip{
-    font:inherit;font-size:12.5px;padding:4px 10px;border-radius:999px;cursor:pointer;
+    font:inherit;font-size:13px;padding:9px 14px;border-radius:999px;cursor:pointer;
     background:var(--surface);color:var(--ink-2);border:1px solid var(--rule);
+    min-height:40px;
   }
   .chip:hover{border-color:var(--nhi);color:var(--nhi)}
   .chip:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
@@ -98,49 +98,64 @@
   .pv input:focus{outline:2px solid var(--focus);outline-offset:1px}
   .filters{display:flex;gap:4px}
   .filters button{
-    font:inherit;font-size:12.5px;padding:5px 11px;cursor:pointer;
+    font:inherit;font-size:13px;padding:9px 13px;cursor:pointer;min-height:40px;
     background:transparent;color:var(--ink-2);border:1px solid var(--rule);border-radius:6px;
   }
   .filters button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
   .filters button:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 
-  /* results */
+  /* results — mobile-first grid areas；桌機才展開成三欄 */
   ul{list-style:none;margin:0;padding:0}
   li.row{
-    display:grid;grid-template-columns:104px 1fr auto;gap:16px;align-items:baseline;
-    padding:13px 4px;border-bottom:1px solid var(--rule-2);
+    display:grid; grid-template-columns:minmax(0,1fr) max-content;
+    grid-template-areas:"code amount" "name name" "meta meta" "more more";
+    gap:4px 12px; padding:12px 2px; border-bottom:1px solid var(--rule-2);
+  }
+  @media (min-width:48rem){
+    li.row{
+      grid-template-columns:120px minmax(0,1fr) max-content;
+      grid-template-areas:"code name amount" ".　 meta meta" ".　 more more";
+      align-items:baseline; padding:13px 4px;
+    }
   }
   li.row:hover{background:var(--surface)}
+  /* 代碼可點擊複製 —— 直接服務「抄碼」這個主要任務 */
   .code{
-    font-family:Georgia,"Songti TC",serif;font-size:14.5px;font-weight:600;letter-spacing:.01em;
-    font-variant-numeric:tabular-nums;
+    grid-area:code; justify-self:start; min-height:44px; display:inline-flex; align-items:center;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:15px; font-weight:600; letter-spacing:.01em; font-variant-numeric:tabular-nums;
+    background:none; border:0; padding:0 6px 0 0; cursor:pointer; text-align:left;
   }
   .code.nhi{color:var(--nhi)} .code.pay{color:var(--pay)}
-  .src{display:block;font-family:-apple-system,sans-serif;font-size:10.5px;font-weight:500;
-       letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
-  .name{min-width:0}
-  .zh{font-size:15px;color:var(--ink)}
-  .en{font-size:12.5px;color:var(--ink-3);margin-top:2px;font-style:italic;overflow-wrap:anywhere}
-  .sec{font-size:11.5px;color:var(--ink-3);margin-top:3px}
-  .note{font-size:11.5px;color:var(--pay);margin-top:5px;line-height:1.55;
-        border-left:2px solid var(--pay);padding-left:8px;max-width:72ch}
-  details.note>summary{cursor:pointer;font-weight:500;list-style:none;
-        display:inline-flex;align-items:center;gap:5px}
-  details.note>summary::-webkit-details-marker{display:none}
-  details.note>summary::before{content:"▸";font-size:.9em;transition:transform .15s}
-  details.note[open]>summary::before{transform:rotate(90deg)}
-  details.note[open]{padding-bottom:2px}
-  details.note>summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-  .val{text-align:right;white-space:nowrap}
+  .code:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+  .code.copied::after{content:"已複製";margin-left:7px;font-family:inherit;
+    font-size:10.5px;font-weight:500;color:var(--ink-3);letter-spacing:.02em}
+  .amount{grid-area:amount;text-align:right;white-space:nowrap}
   .num{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;
-       font-size:15.5px;font-weight:600}
-  .unit{font-size:11px;color:var(--ink-3);margin-left:3px;font-weight:400}
-  .money{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;
-         font-size:12.5px;color:var(--ink-2);margin-top:2px}
-  .verify{font-size:10px;color:var(--pay);margin-top:4px;letter-spacing:.02em;opacity:.85}
-  .nocover{display:inline-block;margin-top:4px;padding:1px 7px;border-radius:999px;
-           background:var(--pay);color:var(--bg);font-size:10px;font-weight:600;
-           letter-spacing:.03em}
+       font-size:16px;font-weight:600}
+  .unit{font-size:11.5px;color:var(--ink-2);margin-left:3px;font-weight:400}
+  /* 中文名 16px：臨床手機情境下，小於此不易掃視 */
+  .name{grid-area:name;min-width:0;font-size:16px;color:var(--ink);line-height:1.45}
+  .meta{grid-area:meta;font-size:12px;color:var(--ink-2);
+        font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+  .nocover{display:inline-block;margin-left:4px;padding:1px 7px;border-radius:999px;
+           background:var(--pay);color:var(--bg);font-size:10.5px;font-weight:600}
+  details.more{grid-area:more}
+  details.more>summary{cursor:pointer;list-style:none;min-height:44px;
+    display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ink-2)}
+  details.more>summary::-webkit-details-marker{display:none}
+  details.more>summary::before{content:"▸";transition:transform .15s}
+  details.more[open]>summary::before{transform:rotate(90deg)}
+  details.more>summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+  /* 展開層：英文名不用 italic（降低閱讀速度且行高不可預測） */
+  .en{font-size:13px;color:var(--ink-2);overflow-wrap:anywhere;margin-bottom:4px}
+  .sec{font-size:12px;color:var(--ink-2);margin-bottom:4px}
+  .note{font-size:12.5px;color:var(--ink);line-height:1.6;max-width:72ch;
+        border-left:2px solid var(--pay);padding-left:9px;margin:4px 0}
+  .conv{font-size:12.5px;color:var(--ink-2);margin-top:6px;
+        font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+           clip:rect(0 0 0 0);white-space:nowrap;border:0}
   mark{background:var(--nhi-soft);color:inherit;padding:0 1px;border-radius:2px}
 
   .empty{padding:56px 8px;text-align:center;color:var(--ink-2)}
@@ -175,11 +190,11 @@
   <header>
     <h1>手術點數查詢</h1>
     <p class="sub">健保支付標準（西醫部・牙醫部）與長庚自費收費標準的雙向查詢。輸入<b>術式</b>找代碼，或輸入<b>代碼</b>找項目與點數。</p>
-    <div class="topwarn" role="alert">
+    <aside class="topwarn" role="note">
       <b>Beta — 找候選碼用，不可直接採信。</b>本頁由官方 PDF 自動解析，經兩輪獨立審查仍存在
       <b>名稱繼承錯誤</b>、<b>漏碼</b>與<b>版本問題</b>（詳見頁尾）。
       查到結果請<b>回原始 PDF 或健保署當期公告逐筆核對</b>後再使用；申報與計價一律以官方公告及院區現行標準為準。
-    </div>
+    </aside>
   </header>
 
   <div class="search">
@@ -187,7 +202,8 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
       </svg>
-      <input type="search" id="q" placeholder="例如：正顎、皮瓣、64255B、11-449" autocomplete="off" autofocus>
+      <label class="sr-only" for="q">搜尋術式名稱或代碼</label>
+      <input type="search" id="q" placeholder="例如：正顎、皮瓣、64255B、11-449" autocomplete="off">
     </div>
     <div class="hints">
       <span>常用：</span>
@@ -202,7 +218,7 @@
   </div>
 
   <div class="bar">
-    <div class="count" id="count"></div>
+    <div class="count" id="count" role="status" aria-live="polite"></div>
     <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
       <div class="filters" role="group" aria-label="資料來源篩選">
         <button data-f="all" aria-pressed="true">全部</button>
@@ -218,6 +234,7 @@
   </div>
 
   <ul id="out"></ul>
+  <p class="sr-only" id="sr" role="status" aria-live="polite"></p>
   <div class="empty" id="empty" hidden></div>
 
   <div class="warn" role="note">
@@ -253,7 +270,7 @@ const SRC=["健保西醫","健保牙醫","長庚自費"];
 const SRC_FILE=["健保西醫本","健保牙醫修正規定","長庚自費2026-07"];
 const out=document.getElementById('out'), empty=document.getElementById('empty'),
       countEl=document.getElementById('count'), q=document.getElementById('q'), pv=document.getElementById('pv');
-let filter='all', pointValue=1.0;
+let filter='all', pointValue=null;   // null＝未設定，不做換算
 
 const norm=s=>(s||'').toLowerCase().trim();
 // 建立索引字串一次，避免每次查詢重組
@@ -343,10 +360,10 @@ function hl(text,terms){
     s=s.replace(new RegExp('('+t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark>$1</mark>'); }
   return s;
 }
+// 自費列直接顯示原文金額（含區間／單位價）；健保列不在此換算（見 .conv）
 function money(r){
-  if(r.u==='ntd') return r.r ? 'NT$'+r.r.replace('~','–') : 'NT$'+r.p.toLocaleString();
-  const v=r.p*pointValue;
-  return '≈ NT$'+v.toLocaleString(undefined,{maximumFractionDigits:0});
+  if(r.u!=='ntd') return '';
+  return r.r ? 'NT$'+r.r.replace('~','–') : 'NT$'+r.p.toLocaleString();
 }
 function render(){
   const raw=q.value.trim();
@@ -386,6 +403,15 @@ function render(){
     });
   }
   // 精確命中優先於近似；近似結果不做代碼排序（已按相似度排好）
+  // 未輸入且未篩選時**不列出任意 300 筆** —— 與「輸入→找到→離開」的使用方式相反，
+  // 手機上也白白付出 DOM 成本。改為顯示操作提示。
+  if(!raw && filter==='all'){
+    out.innerHTML=''; empty.hidden=false;
+    empty.innerHTML='<p class="big">輸入術式名稱或代碼開始查詢</p>'+
+      '<p>可用中文、英文、常見縮寫或俗名；打錯字也能模糊比對。</p>';
+    countEl.innerHTML=`共 <b>${RAW.length.toLocaleString()}</b> 項可查詢`;
+    return;
+  }
   const shown=rows.slice(0,300);
   countEl.innerHTML= raw||filter!=='all'
     ? `<b>${rows.length.toLocaleString()}</b> 筆${approx?'<span class="approx">近似結果</span>':'符合'}${rows.length>300?'（顯示前 300）':''}`
@@ -399,22 +425,23 @@ function render(){
   empty.hidden=true;
   out.innerHTML=shown.map(r=>{
     const isPay=r.u==='ntd';
+    // 兩層式：第一層＝掃視必看（代碼／名稱／金額／出處），其餘收進 details。
+    // ⚠️ 不論註記長短一律同一種展開模式 —— 舊版短註記攤開、長註記收起，行為不一致。
+    const more = [
+      r.e && r.z ? `<div class="en">${hl(r.e,terms)}</div>` : '',
+      r.s && !isPay ? `<div class="sec">${esc(r.s)}</div>` : '',
+      r.n ? `<div class="note">${esc(r.n)}</div>` : '',
+      isPay ? '' : `<div class="conv" data-p="${r.p}"></div>`,
+    ].filter(Boolean).join('');
     return `<li class="row">
-      <div><span class="code ${isPay?'pay':'nhi'}">${hl(r.c,terms)}</span><span class="src">${SRC[r.b]}</span></div>
-      <div class="name">
-        ${r.z?`<div class="zh">${hl(r.z,terms)}</div>`:''}
-        ${r.e?`<div class="${r.z?'en':'zh'}">${hl(r.e,terms)}</div>`:''}
-        ${r.s&&!isPay?`<div class="sec">${esc(r.s)}</div>`:''}
-        ${r.n?(r.n.length>90
-            ? `<details class="note"><summary>給付規範（${r.n.length} 字）</summary>${esc(r.n)}</details>`
-            : `<div class="note">${esc(r.n)}</div>`):''}
-      </div>
-      <div class="val">
-        <div class="num">${isPay?'':r.p.toLocaleString()}${isPay?'':`<span class="unit">${r.pr?r.pr.replace(/^[\d,]+/,''):'點'}</span>`}</div>
-        <div class="money">${money(r)}</div>
-        ${r.x?'<div class="nocover" title="原文標記 * ＝健保不給付項目">健保不給付</div>':''}
-        <div class="verify" title="本工具為自動解析結果，使用前請核對官方原文該頁">核對：${r.f||SRC_FILE[r.b]} p.${r.g||'?'}</div>
-      </div>
+      <button class="code ${isPay?'pay':'nhi'}" data-copy="${r.c}"
+              title="點擊複製代碼">${hl(r.c,terms)}</button>
+      <div class="amount"><span class="num">${r.p.toLocaleString()}</span><span class="unit">${
+        isPay ? '元' : (r.pr ? esc(r.pr.replace(/^[\d,]+/,'')) : '點')}</span></div>
+      <div class="name">${r.z?hl(r.z,terms):hl(r.e,terms)}</div>
+      <div class="meta">${SRC[r.b]} · ${esc(r.f||SRC_FILE[r.b])} p.${r.g||'?'}${
+        r.x ? ' <span class="nocover">健保不給付</span>' : ''}</div>
+      ${more?`<details class="more"><summary>規範與細節</summary>${more}</details>`:''}
     </li>`;
   }).join('');
 }
@@ -423,7 +450,28 @@ function render(){
   for(const id of ['statCodes','statCodes2']){const e=document.getElementById(id); if(e) e.textContent=n;}
   for(const id of ['statNotes']){const e=document.getElementById(id); if(e) e.textContent=k;}})();
 q.addEventListener('input',render);
-pv.addEventListener('input',()=>{const v=parseFloat(pv.value); pointValue=isNaN(v)?1:v; render()});
+
+// 點值換算：**預設不顯示**。舊版預設 1.00 會讓每列出現兩個相同數字，
+// 且 1.00 看起來像官方點值而非佔位符。使用者輸入後才在展開層顯示。
+pv.addEventListener('input',()=>{
+  const v=parseFloat(pv.value);
+  pointValue=(isNaN(v)||v<=0)?null:v;
+  document.querySelectorAll('.conv').forEach(el=>{
+    const p=Number(el.dataset.p);
+    el.textContent = pointValue
+      ? `估算 NT$${Math.round(p*pointValue).toLocaleString()}（${pointValue}／點）` : '';
+  });
+});
+
+// 代碼點擊複製 —— 主要任務是「抄碼」，讓它一步完成
+out.addEventListener('click', async e=>{
+  const b=e.target.closest('.code[data-copy]'); if(!b) return;
+  try{ await navigator.clipboard.writeText(b.dataset.copy); }
+  catch(_){ return; }
+  b.classList.add('copied');
+  const live=document.getElementById('sr'); if(live) live.textContent=`已複製 ${b.dataset.copy}`;
+  setTimeout(()=>b.classList.remove('copied'),1400);
+});
 document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{q.value=c.dataset.q;q.focus();render()}));
 document.querySelectorAll('.filters button').forEach(b=>b.addEventListener('click',()=>{
   filter=b.dataset.f;
@@ -432,6 +480,5 @@ document.querySelectorAll('.filters button').forEach(b=>b.addEventListener('clic
 }));
 render();
 </script>
-
 </body>
 </html>

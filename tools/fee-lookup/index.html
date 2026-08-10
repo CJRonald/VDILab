@@ -119,17 +119,13 @@
     }
   }
   li.row:hover{background:var(--surface)}
-  /* 代碼可點擊複製 —— 直接服務「抄碼」這個主要任務 */
   .code{
-    grid-area:code; justify-self:start; min-height:44px; display:inline-flex; align-items:center;
+    grid-area:code; justify-self:start;
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
     font-size:15px; font-weight:600; letter-spacing:.01em; font-variant-numeric:tabular-nums;
-    background:none; border:0; padding:0 6px 0 0; cursor:pointer; text-align:left;
+    user-select:all;                /* 長按／雙擊可整段選取，不需額外按鈕 */
   }
   .code.nhi{color:var(--nhi)} .code.pay{color:var(--pay)}
-  .code:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
-  .code.copied::after{content:"已複製";margin-left:7px;font-family:inherit;
-    font-size:10.5px;font-weight:500;color:var(--ink-3);letter-spacing:.02em}
   .amount{grid-area:amount;text-align:right;white-space:nowrap}
   .num{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;
        font-size:16px;font-weight:600}
@@ -234,7 +230,6 @@
   </div>
 
   <ul id="out"></ul>
-  <p class="sr-only" id="sr" role="status" aria-live="polite"></p>
   <div class="empty" id="empty" hidden></div>
 
   <div class="warn" role="note">
@@ -434,8 +429,7 @@ function render(){
       isPay ? '' : `<div class="conv" data-p="${r.p}"></div>`,
     ].filter(Boolean).join('');
     return `<li class="row">
-      <button class="code ${isPay?'pay':'nhi'}" data-copy="${r.c}"
-              title="點擊複製代碼">${hl(r.c,terms)}</button>
+      <span class="code ${isPay?'pay':'nhi'}">${hl(r.c,terms)}</span>
       <div class="amount"><span class="num">${r.p.toLocaleString()}</span><span class="unit">${
         isPay ? '元' : (r.pr ? esc(r.pr.replace(/^[\d,]+/,'')) : '點')}</span></div>
       <div class="name">${r.z?hl(r.z,terms):hl(r.e,terms)}</div>
@@ -463,15 +457,6 @@ pv.addEventListener('input',()=>{
   });
 });
 
-// 代碼點擊複製 —— 主要任務是「抄碼」，讓它一步完成
-out.addEventListener('click', async e=>{
-  const b=e.target.closest('.code[data-copy]'); if(!b) return;
-  try{ await navigator.clipboard.writeText(b.dataset.copy); }
-  catch(_){ return; }
-  b.classList.add('copied');
-  const live=document.getElementById('sr'); if(live) live.textContent=`已複製 ${b.dataset.copy}`;
-  setTimeout(()=>b.classList.remove('copied'),1400);
-});
 document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{q.value=c.dataset.q;q.focus();render()}));
 document.querySelectorAll('.filters button').forEach(b=>b.addEventListener('click',()=>{
   filter=b.dataset.f;

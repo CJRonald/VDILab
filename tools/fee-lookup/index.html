@@ -48,7 +48,11 @@
     font-size:clamp(24px,3.4vw,34px); font-weight:600; letter-spacing:-.01em;
     margin:0 0 6px; text-wrap:balance;
   }
-  .sub{color:var(--ink-2);font-size:14.5px;margin:0;max-width:62ch}
+  /* text-wrap:pretty 讓瀏覽器均分各行長度，避免最後一行只剩兩三個字（孤字）。
+     中文沒有詞間空格，換行點由 line-break 決定；`輸入<b>術式</b>找代碼` 這種
+     中文夾行內標籤的結構容易被拆在詞中間，故用 nowrap 把兩個操作短語各自綁成整體。 */
+  .sub{color:var(--ink-2);font-size:14.5px;margin:0;max-width:62ch;text-wrap:pretty}
+  .sub .keep{white-space:nowrap}
   /* 免責聲明：2026-08-11 由搜尋框上方移到結果之後，並改為預設收合的 details 元素。
      理由＝本頁目的是搜尋，警語不該擋在入口；但標題列仍常駐「不可直接採信」。
      清單樣式沿用原 .warn 的 ▸ 標記，維持與頁尾一致的視覺語彙。 */
@@ -187,7 +191,7 @@
 <div class="wrap">
   <header>
     <h1>手術點數查詢</h1>
-    <p class="sub">健保支付標準（西醫部・牙醫部）與長庚自費收費標準的雙向查詢。輸入<b>術式</b>找代碼，或輸入<b>代碼</b>找項目與點數。</p>
+    <p class="sub">健保支付標準（西醫部・牙醫部）與長庚自費收費標準的雙向查詢。<span class="keep">輸入<b>術式</b>找代碼</span>，<span class="keep">或輸入<b>代碼</b>找項目與點數</span>。</p>
   </header>
 
   <div class="search">

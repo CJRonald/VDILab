@@ -366,21 +366,37 @@ function money(r){
 function render(){
   const raw=q.value.trim();
   const terms=expand(raw);
-  let rows=RAW, approx=false;
+  let rows=RAW, approx=false, mixed=false;
   if(filter!=='all') rows=rows.filter(r=>r.b===+filter);
   if(terms.length){
     const exact=rows.filter(r=>terms.some(t=>r._i.includes(t)));
-    if(exact.length){ rows=exact; }
-    else {
-      // 第 2 層：拆字元部分比對 —— **僅限中文**。
-      // 英文拆成單字母毫無鑑別度（`sscc` 曾因此比中 2,770 筆），一律交給第 3 層。
-      const nq=norm(raw);
-      const cs=nq.split('').filter(c=>c.trim());
-      const cjkOnly=/^[㐀-鿿、，。]+$/.test(raw.trim());
-      const parts=cjkOnly&&cs.length>1 ? rows.filter(r=>cs.every(c=>r._i.includes(c))) : [];
-      if(parts.length){ rows=parts; approx=true; }
-      else { rows=fuzzy(rows,raw); approx=true; }   // 第 3 層：編輯距離／字元重疊
+    // 第 2 層：拆字元部分比對 —— **僅限中文**。
+    // 英文拆成單字母毫無鑑別度（`sscc` 曾因此比中 2,770 筆），一律交給第 3 層。
+    const nq=norm(raw);
+    const cs=nq.split('').filter(c=>c.trim());
+    const cjkOnly=/^[㐀-鿿、，。]+$/.test(raw.trim());
+    const parts=cjkOnly&&cs.length>1 ? rows.filter(r=>cs.every(c=>r._i.includes(c))) : [];
+
+    // 🔴 **第 2 層不可只在第 1 層掛零時才跑**（2026-08-11 實例）。
+    //    碼本用頓號列舉部位：`64035C 腕、跗、掌、蹠骨骨折開放性復位術`。
+    //    使用者打「掌骨」——字面子字串不存在（中間隔著 `、蹠`），但 `掌` 與 `骨` 都在。
+    //    舊寫法：第 1 層拿到 4 筆（`掌骨骨折徒手復位術` 等）就 short-circuit，
+    //    64035C **永遠不會出現**，而畫面上是「4 筆符合」看起來查詢成功 ——
+    //    這是偽裝成成功的假陰性，比查無資料危險。
+    //    ⇒ 兩層**聯集**，字面命中仍排在前（下方 rank 已處理），近似者補在後。
+    //    名稱含頓號者實測 116 筆，屬系統性版面特徵而非個案。
+    if(exact.length && parts.length){
+      const seen=new Set(exact.map(r=>r.c));
+      const extra=parts.filter(r=>!seen.has(r.c));
+      rows=extra.length ? exact.concat(extra) : exact;
+      // 有補進字面外的結果才標記，否則純字面查詢不該被標。
+      // ⚠️ 用獨立旗標而非 approx —— approx 會關掉下方排序，
+      //    但這批**含字面命中**，正需要排序把字面結果推到前面。
+      if(extra.length) mixed=true;
     }
+    else if(exact.length){ rows=exact; }
+    else if(parts.length){ rows=parts; approx=true; }
+    else { rows=fuzzy(rows,raw); approx=true; }   // 第 3 層：編輯距離／字元重疊
   }
   // 精確代碼命中排最前，其次中文名開頭命中。
   // ⚠️ 近似結果已按相似度排序，不可再依代碼重排（會毀掉相關性）
@@ -412,7 +428,7 @@ function render(){
   }
   const shown=rows.slice(0,300);
   countEl.innerHTML= raw||filter!=='all'
-    ? `<b>${rows.length.toLocaleString()}</b> 筆${approx?'<span class="approx">近似結果</span>':'符合'}${rows.length>300?'（顯示前 300）':''}`
+    ? `<b>${rows.length.toLocaleString()}</b> 筆${approx?'<span class="approx">近似結果</span>':(mixed?'<span class="approx">含部分比對</span>':'符合')}${rows.length>300?'（顯示前 300）':''}`
     : `共 <b>${RAW.length.toLocaleString()}</b> 項可查詢`;
 
   if(!shown.length){

@@ -49,12 +49,19 @@
     margin:0 0 6px; text-wrap:balance;
   }
   .sub{color:var(--ink-2);font-size:14.5px;margin:0;max-width:62ch}
-  .topwarn{margin-top:14px;padding:10px 14px;border-radius:7px;font-size:13px;line-height:1.55;
+  /* 免責聲明：2026-08-11 由搜尋框上方移到結果之後，並改為預設收合的 details 元素。
+     理由＝本頁目的是搜尋，警語不該擋在入口；但標題列仍常駐「不可直接採信」。
+     清單樣式沿用原 .warn 的 ▸ 標記，維持與頁尾一致的視覺語彙。 */
+  .topwarn{margin-top:28px;padding:10px 14px;border-radius:7px;font-size:13px;line-height:1.55;
            background:var(--pay-soft);color:var(--ink-2);border:1px solid var(--pay);
            border-left-width:3px;max-width:72ch}
   .topwarn b{color:var(--pay)}
-  /* 限制清單原本在結果下方獨立一塊，2026-08-11 併入本區塊（同一警語不分兩處講）。
-     清單樣式沿用原 .warn 的 ▸ 標記，維持與頁尾一致的視覺語彙。 */
+  .topwarn summary{cursor:pointer;list-style:none;user-select:none}
+  .topwarn summary::-webkit-details-marker{display:none}
+  .topwarn summary::before{content:"▸";display:inline-block;margin-right:7px;
+           color:var(--pay);transition:transform .15s}
+  .topwarn[open] summary::before{transform:rotate(90deg)}
+  .topwarn p{margin:8px 0 0}
   .topwarn ul{margin:8px 0 0;padding-left:0}
   .topwarn li{margin:5px 0;padding-left:15px;position:relative;list-style:none}
   .topwarn li::before{content:"▸";position:absolute;left:0;color:var(--pay)}
@@ -181,17 +188,6 @@
   <header>
     <h1>手術點數查詢</h1>
     <p class="sub">健保支付標準（西醫部・牙醫部）與長庚自費收費標準的雙向查詢。輸入<b>術式</b>找代碼，或輸入<b>代碼</b>找項目與點數。</p>
-    <aside class="topwarn" role="note">
-      <b>Beta — 找候選碼用，不可直接採信。</b>本頁由官方 PDF 自動解析。
-      查到結果請<b>回原始 PDF 或健保署當期公告逐筆核對</b>後再使用；申報與計價一律以官方公告及院區現行標準為準。
-      <ul>
-        <li><b>零星漏碼</b>：極少數版面破碎的項目未被收錄，故<b>不可用於定義研究 cohort</b>（會有系統性假陰性）。</li>
-        <li><b>少數項目名稱可能不完整或錯置</b>（碼本版面複雜，部分名稱與代碼分列不同行）。已知<b>高壓氧治療章（59002B–59016B）</b>名稱截斷並混入壓力／時間欄位，該章請一律核對原文。</li>
-        <li><b>部分給付規範歸屬待確認</b>；顯示的規範若與臨床認知不符，請以原文為準。</li>
-        <li><b>無生效日期欄位</b>。健保支付標準逐年修正，跨年度使用請確認該碼於當期是否異動。</li>
-        <li>長庚自費原文載明「<b>實際計價以當時價格／院區公告為準</b>」。</li>
-      </ul>
-    </aside>
   </header>
 
   <div class="search">
@@ -232,6 +228,20 @@
 
   <ul id="out"></ul>
   <div class="empty" id="empty" hidden></div>
+
+  <!-- 免責聲明置於結果之後：本頁的目的是「查得到」，警語不該擋在搜尋框前面。
+       預設收合但標題仍讀得到「不可直接採信」，展開才看細節。 -->
+  <details class="topwarn">
+    <summary><b>Beta — 找候選碼用，不可直接採信</b></summary>
+    <p>本頁由官方 PDF 自動解析。查到結果請<b>回原始 PDF 或健保署當期公告逐筆核對</b>後再使用；申報與計價一律以官方公告及院區現行標準為準。</p>
+    <ul>
+      <li><b>零星漏碼</b>：極少數版面破碎的項目未被收錄，故<b>不可用於定義研究 cohort</b>（會有系統性假陰性）。</li>
+      <li><b>少數項目名稱可能不完整或錯置</b>（碼本版面複雜，部分名稱與代碼分列不同行）。已知<b>高壓氧治療章（59002B–59016B）</b>名稱截斷並混入壓力／時間欄位，該章請一律核對原文。</li>
+      <li><b>部分給付規範歸屬待確認</b>；顯示的規範若與臨床認知不符，請以原文為準。</li>
+      <li><b>無生效日期欄位</b>。健保支付標準逐年修正，跨年度使用請確認該碼於當期是否異動。</li>
+      <li>長庚自費原文載明「<b>實際計價以當時價格／院區公告為準</b>」。</li>
+    </ul>
+  </details>
 
   <footer>
     <b>資料來源與限制</b>

@@ -43,11 +43,27 @@
   .wrap{max-width:1040px;margin:0 auto;padding:32px 20px 96px}
 
   header{margin-bottom:28px}
+  /* 院徽 + 標題橫向鎖定。素材取自燒燙傷中心官網 assets/images/logos/CGMH Logo.svg
+     （同一份官方檔），已剝除 937KB 內嵌 ICC profile —— 940KB → 2.7KB，
+     實測剝除前後 rsvg 輸出 **byte-identical**，純體積優化不動外觀。
+     內嵌而非外連：本頁設計為單檔可離線使用，不發任何外部請求。 */
+  /* ⚠️ logo 高度用 em 會綁到 .titlebar 繼承的 16px，而 h1 是 clamp(24→34px) ——
+     兩者不同步，窄視窗下 logo 會比標題還高（實算 34px vs 24px＝1.4 倍）。
+     ⇒ titlebar 自己套用與 h1 相同的 clamp，logo 再以 em 相對它縮放。 */
+  .titlebar{display:flex;align-items:center;gap:12px;margin:0 0 6px;
+            font-size:clamp(24px,3.4vw,34px)}
+  .cgmh-logo{height:1.25em;width:auto;flex:none}
+  /* 深色模式：官方綠 #00843D 在深底上偏暗，提亮但保留色相不改成別的顏色 */
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .cgmh-logo{filter:brightness(1.45)}
+  }
   h1{
     font-family:Georgia,"Songti TC","Noto Serif TC",serif;
-    font-size:clamp(24px,3.4vw,34px); font-weight:600; letter-spacing:-.01em;
-    margin:0 0 6px; text-wrap:balance;
+    font-size:1em;              /* 尺寸由 .titlebar 的 clamp 決定，見上方註解 */
+    font-weight:600; letter-spacing:-.01em;
+    margin:0; text-wrap:balance;
   }
+  @media (max-width:640px){ .titlebar{gap:9px} }
   /* text-wrap:pretty 讓瀏覽器均分各行長度，避免最後一行只剩兩三個字（孤字）。
      中文沒有詞間空格，換行點由 line-break 決定；`輸入<b>術式</b>找代碼` 這種
      中文夾行內標籤的結構容易被拆在詞中間，故用 nowrap 把兩個操作短語各自綁成整體。 */
@@ -190,7 +206,10 @@
 
 <div class="wrap">
   <header>
-    <h1>長庚體系手術點數查詢</h1>
+    <div class="titlebar">
+      <svg class="cgmh-logo" role="img" aria-label="長庚紀念醫院" version="1.1" id="cgmh-svg1" viewBox="0 0 777.78668 518.20667" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns="http://www.w3.org/2000/svg" ><defs id="cgmh-defs1"><clipPath clipPathUnits="userSpaceOnUse" id="cgmh-clipPath2"><path d="M 0,388.655 H 583.34 V 0 H 0 Z" transform="translate(-424.28121,-95.658202)" id="cgmh-path2" /></clipPath><clipPath clipPathUnits="userSpaceOnUse" id="cgmh-clipPath4"><path d="M 0,388.655 H 583.34 V 0 H 0 Z" transform="translate(-580.96291,-242.667)" id="cgmh-path4" /></clipPath><clipPath clipPathUnits="userSpaceOnUse" id="cgmh-clipPath6"><path d="M 0,388.655 H 583.34 V 0 H 0 Z" transform="translate(-388.63281,-213.54491)" id="cgmh-path6" /></clipPath></defs><sodipodi:namedview id="cgmh-namedview1" pagecolor="#ffffff" bordercolor="#000000" borderopacity="0.25" ><inkscape:page x="0" y="0" id="cgmh-page1" width="777.78668" height="518.20667" margin="0" bleed="0" /></sodipodi:namedview><g id="cgmh-layer-MC0" ><path id="cgmh-path1" d="m 0,0 c -30.301,-40.223 -78.904,-67.084 -132.603,-67.084 -53.823,0 -102.3,26.861 -132.727,67.084 -35.649,47.836 -92.309,78.787 -156.115,78.787 h -2.836 V 49.654 h 2.268 c 54.95,0 104.119,-26.861 133.863,-67.785 35.639,-47.262 92.416,-77.527 155.547,-77.527 63.115,0 119.783,30.265 155.423,77.527 30.418,40.924 78.905,67.785 133.862,67.785 h 2.377 v 29.133 h -2.377 C 92.416,78.787 35.766,47.836 0,0" style="fill:#00843D;fill-opacity:1;fill-rule:nonzero;stroke:none" transform="matrix(1.3333333,0,0,-1.3333333,565.70827,390.6624)" clip-path="url(#cgmh-clipPath2)" /><path id="cgmh-path3" d="m 0,0 c -54.957,0 -103.443,26.862 -133.861,67.786 -35.641,47.262 -92.309,78.202 -155.423,78.202 -63.132,0 -119.908,-30.94 -155.548,-77.643 C -474.575,26.862 -523.745,0 -578.694,0 h -2.269 v -29.122 h 2.836 c 63.807,0 120.467,30.94 156.115,78.76 30.427,40.924 78.905,67.102 132.728,67.102 53.698,0 102.302,-26.178 132.602,-67.102 C -120.916,1.818 -64.266,-29.122 0,-29.122 H 2.377 L 2.377,0 Z" style="fill:#00843D;fill-opacity:1;fill-rule:nonzero;stroke:none" transform="matrix(1.3333333,0,0,-1.3333333,774.6172,194.65067)" clip-path="url(#cgmh-clipPath4)" /><path id="cgmh-path5" d="m 0,0 v -39.1 h -77.662 v -9.308 -9.975 -58.371 h -19.292 -19.31 v 58.371 19.283 h -19.3 -58.469 V 0 h 58.469 19.3 v 19.265 58.37 h 19.31 19.292 V 19.265 0 h 19.308 z m -96.954,116.731 h -58.478 V 39.097 h -77.779 V -77.648 h 77.779 v -78.211 h 58.478 57.786 v 78.211 H 39.178 V 39.097 h -78.346 v 77.634 z" style="fill:#00843D;fill-opacity:1;fill-rule:nonzero;stroke:none" transform="matrix(1.3333333,0,0,-1.3333333,518.17707,233.48013)" clip-path="url(#cgmh-clipPath6)" /></g></svg>
+      <h1>長庚體系手術點數查詢</h1>
+    </div>
     <p class="sub">健保支付標準（西醫部・牙醫部）與長庚自費收費標準的雙向查詢。<span class="keep">輸入<b>術式</b>找代碼</span>，<span class="keep">或輸入<b>代碼</b>找項目與點數</span>。</p>
   </header>
 

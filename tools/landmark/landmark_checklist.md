@@ -1,6 +1,6 @@
 # Landmark 標註清單（17 點，schema v1.1）
 
-工具載入照片後右側面板會列出這 17 點；本卡供離線對照。完整定義見 [SimAI landmark_schema_v1.md](../../Rhino_Hsiao_SimAI_Landmark/01_Annotation/landmark_schema_v1.md)。
+工具載入照片後右側面板會列出這 17 點；本卡供離線對照。完整定義見 [SimAI landmark_schema_v1.md](../../Rhino_Hsiao_SimAI_Landmark/Annotation/landmark_schema_v1.md)。
 
 > **戒律**：標完一張一定 17 點都動過，看不到的點也要 placeholder + vis=0。
 

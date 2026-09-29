@@ -6,6 +6,7 @@ header: images/background.svg
 footer: images/background.svg
 proofer: false
 url: https://lab.cjhuang.com
+baseurl: ""
 
 # site social media and other links
 links:

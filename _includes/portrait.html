@@ -23,9 +23,9 @@
     {% endif %}
 
     <img
-      src="{{ member.image | relative_url | uri_escape }}"
+      src="{{ member.image | default: "images/fallback.svg" | relative_url | uri_escape }}"
       class="portrait-image"
-      alt="member portrait"
+      alt="{{ member.name | default: 'Member' | xml_escape }}"
       loading="lazy"
       {% include fallback.html %}
     >

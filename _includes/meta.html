@@ -7,13 +7,13 @@
   {% assign title = nil %}
 {% endif %}
 
-{% assign title = title | xml_escape %}
+{% assign title = title | default: site.title %}
 
 {% assign fulltitle = "" | split: "," %}
 {% if title and title != "" %}
   {% assign fulltitle = fulltitle | push: title %}
 {% endif %}
-{% if site.title and site.title != "" %}
+{% if site.title and site.title != "" and site.title != title %}
   {% assign fulltitle = fulltitle | push: site.title %}
 {% endif %}
 {% assign fulltitle = fulltitle | join: " | " %}
@@ -21,24 +21,20 @@
 {% assign subtitle = site.subtitle %}
 
 {% assign description = page.description | default: site.description %}
-{% if site.subtitle %}
-  {% capture description -%}
-    {{ site.subtitle }}. {{ description }}
-  {%- endcapture %}
-{% endif %}
-{% capture url -%}
-  {{ site.url }}{{ site.baseurl }}
-{%- endcapture %}
-
-{% assign description = description | xml_escape %}
+{% assign url = page.url | replace: "index.html", "" | absolute_url %}
 
 {% assign png = "images/icon.png" | file_exists %}
 {% assign jpg = "images/icon.jpg" | file_exists %}
-{% assign icon = png | default: jpg | relative_url %}
+{% assign icon = png | default: jpg | absolute_url %}
 
 {% assign jpg = "images/share.jpg" | file_exists %}
 {% assign png = "images/share.png" | file_exists %}
-{% assign share = jpg | default: png | relative_url %}
+{% assign share = jpg | default: png %}
+{% assign twitter_card = "summary" %}
+{% unless share %}
+  {% assign share = icon %}
+{% endunless %}
+{% assign share = share | absolute_url %}
 
 {% assign published = page.date | date_to_xmlschema %}
 {% assign updated = page.last_modified_at | date_to_xmlschema %}
@@ -47,25 +43,29 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>{{ fulltitle }}</title>
+<title>{{ fulltitle | xml_escape }}</title>
+<link rel="canonical" href="{{ url | xml_escape }}">
+{% if page.robots %}<meta name="robots" content="{{ page.robots | xml_escape }}">{% endif %}
 
 <link rel="icon" href="{{ icon }}">
 
-<meta name="title" content="{{ title }}">
-<meta name="description" content="{{ description }}">
+<meta name="title" content="{{ fulltitle | xml_escape }}">
+<meta name="description" content="{{ description | xml_escape }}">
 
-<meta property="og:title" content="{{ title }}">
-<meta property="og:site_title" content="{{ site.title | xml_escape }}">
-<meta property="og:description" content="{{ description }}">
+<meta property="og:title" content="{{ fulltitle | xml_escape }}">
+<meta property="og:site_name" content="{{ site.title | xml_escape }}">
+<meta property="og:description" content="{{ description | xml_escape }}">
 <meta property="og:url" content="{{ url }}">
 <meta property="og:image" content="{{ share }}">
+<meta property="og:image:alt" content="{{ site.title | xml_escape }} logo">
 <meta property="og:locale" content="en_US">
 
-<meta property="twitter:title" content="{{ title }}">
-<meta property="twitter:description" content="{{ description }}">
-<meta property="twitter:url" content="{{ url }}">
-<meta property="twitter:card" content="summary_large_image">
-<meta property="twitter:image" content="{{ share }}">
+<meta name="twitter:title" content="{{ fulltitle | xml_escape }}">
+<meta name="twitter:description" content="{{ description | xml_escape }}">
+<meta name="twitter:url" content="{{ url }}">
+<meta name="twitter:card" content="{{ twitter_card }}">
+<meta name="twitter:image" content="{{ share }}">
+<meta name="twitter:image:alt" content="{{ site.title | xml_escape }} logo">
 
 {% if page.author %}
   <meta name="author" content="{{ page.author | xml_escape }}">
@@ -78,25 +78,27 @@
   <meta property="og:type" content="website">
 {% endif %}
 
+{% assign author = site.members | where: "slug", page.author | first %}
 <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     {% if page.author %}
       "@type": "BlogPosting",
-      "author": { "@type": "Person", "name": "{{ title }}" },
-      "datePublished": "{{ published }}",
-      "dateModified": "{{ updated }}",
+      "author": { "@type": "Person", "name": {{ author.name | default: page.author | jsonify }} },
+      "datePublished": {{ published | jsonify }},
+      "dateModified": {{ updated | jsonify }},
     {% else %}
-      "@type": "WebSite",
+      "@type": "WebPage",
     {% endif %}
-    "name": "{{ title }}",
-    "description": "{{ description }}",
-    "headline": "{{ title }}",
+    "name": {{ title | jsonify }},
+    "description": {{ description | jsonify }},
+    "headline": {{ title | jsonify }},
     "publisher": {
       "@type": "Organization",
-      "logo": { "@type": "ImageObject", "url": "{{ icon }}" }
+      "name": {{ site.title | jsonify }},
+      "logo": { "@type": "ImageObject", "url": {{ icon | jsonify }} }
     },
-    "url": "{{ url }}"
+    "url": {{ url | jsonify }}
   }
 </script>
 

@@ -13,8 +13,12 @@ nav:
 
 ## Public demos
 
+{% include search-box.html %}
+
+{% include search-info.html %}
+
 {% capture col1 %}
-{% include card.html image="images/tiles/burn-segmentation.svg" link="https://huggingface.co/spaces/CJRonald/burn-segmentation-demo" title="Burn segmentation demo" subtitle="Hugging Face Space" description="Upload a burn photograph and see the wound outlined by a deep-supervision UNet++. Images are processed in memory and not stored." tags="burn, segmentation" %}
+{% include card.html image="images/tiles/burn-segmentation.svg" link="https://huggingface.co/spaces/CJRonald/burn-segmentation-demo" title="Burn segmentation demo" subtitle="Hugging Face Space" description="A deep-supervision UNet++ model that outlines burn wounds in photographs. Images are processed in memory and not stored." tags="burn, segmentation" %}
 {% endcapture %}
 {% capture col2 %}
 {% include card.html image="images/tiles/flap.svg" link="https://huggingface.co/spaces/CJRonald/flap-prediction-demo" title="Flap circulation demo" subtitle="Hugging Face Space" description="A ResNet18 region-of-interest model that classifies free-flap circulation from a flap photograph." tags="microsurgery, perfusion" %}

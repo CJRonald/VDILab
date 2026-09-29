@@ -3,7 +3,7 @@
 
 .project-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
   gap: 30px;
   margin: 40px 0;
 }
@@ -11,6 +11,7 @@
 .project-card {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   background: var(--background);
   border-radius: var(--rounded);
   box-shadow: var(--shadow);
@@ -20,6 +21,10 @@
 
 .project-card:hover {
   transform: translateY(-3px);
+}
+
+.project-card-image {
+  display: block;
 }
 
 .project-card-image img {
@@ -48,15 +53,24 @@
 }
 
 .project-card-title {
+  margin: 0;
+  letter-spacing: normal;
+  line-height: var(--compact);
+  overflow-wrap: anywhere;
   font-family: var(--heading);
   font-size: var(--large);
   font-weight: var(--semi-bold);
   text-decoration: none;
 }
 
+.project-card-title a {
+  text-decoration: none;
+}
+
 .project-card-people {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .project-card-person img {
@@ -68,9 +82,19 @@
 }
 
 .project-card-status {
-  color: var(--gray);
+  color: var(--dark-gray);
   font-size: 0.9rem;
   font-weight: var(--semi-bold);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.project-card a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-card { transition: none; }
+  .project-card:hover { transform: none; }
 }

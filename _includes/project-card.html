@@ -1,24 +1,30 @@
 {% assign project = include.project %}
 <div class="project-card">
-  <a class="project-card-image"
-    {% if project.link %}href="{{ project.link | relative_url | uri_escape }}"{% endif %}
-    aria-label="{{ project.title | regex_strip }}">
-    <img src="{{ project.image | relative_url | uri_escape }}" alt="{{ project.title | regex_strip }}" loading="lazy" {% include fallback.html %}>
-  </a>
+  {% if project.link %}
+    <a class="project-card-image" href="{{ project.link | relative_url | uri_escape }}" aria-label="{{ project.title | strip_html | xml_escape }}">
+  {% else %}
+    <div class="project-card-image">
+  {% endif %}
+    <img src="{{ project.image | default: 'images/fallback.svg' | relative_url | uri_escape }}" alt="{{ project.title | strip_html | xml_escape }}" loading="lazy" {% include fallback.html %}>
+  {% if project.link %}</a>{% else %}</div>{% endif %}
   <div class="project-card-text">
-    <a class="project-card-title" {% if project.link %}href="{{ project.link | relative_url | uri_escape }}"{% endif %}>{{ project.title }}</a>
+    <h3 class="project-card-title">
+      {% if project.link %}<a href="{{ project.link | relative_url | uri_escape }}">{% endif %}
+      {{ project.title | xml_escape }}
+      {% if project.link %}</a>{% endif %}
+    </h3>
     <div class="project-card-people">
       {% for slug in project.people %}
         {% assign member = site.members | where_exp: "m", "m.slug == slug" | first %}
         {% if member %}
           <a href="{{ member.url | relative_url }}" class="project-card-person" data-tooltip="{{ member.name | xml_escape }}">
-            <img src="{{ member.image | relative_url | uri_escape }}" alt="{{ member.name | xml_escape }}" loading="lazy">
+            <img src="{{ member.image | default: 'images/fallback.svg' | relative_url | uri_escape }}" alt="{{ member.name | xml_escape }}" width="32" height="32" loading="lazy" {% include fallback.html %}>
           </a>
         {% endif %}
       {% endfor %}
     </div>
-    {% if project.status %}<span class="project-card-status">{{ project.status }}</span>{% endif %}
-    <p>{{ project.description | markdownify | remove: "<p>" | remove: "</p>" }}</p>
-    {% include tags.html tags=project.tags %}
+    {% if project.status %}<span class="project-card-status">{{ project.status | xml_escape }}</span>{% endif %}
+    <div class="project-card-description">{{ project.description | markdownify }}</div>
+    {% include tags.html tags=project.tags link="research/" %}
   </div>
 </div>

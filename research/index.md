@@ -8,7 +8,11 @@ nav:
 # {% include icon.html icon="fa-solid fa-microscope" %}Research
 
 Quantitative clinical research and AI methods across four surgical domains.
-Every model is trained with patient-level data splits and reported with discrimination metrics appropriate for imbalanced outcomes.
+Our methods standard is patient-level train/test splitting and discrimination metrics suited to imbalanced outcomes.
+
+{% include search-box.html %}
+
+{% include search-info.html %}
 
 {% include section.html %}
 

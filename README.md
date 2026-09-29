@@ -1,3 +1,5 @@
+Visit **[lab.cjhuang.com](http://lab.cjhuang.com)** 🚀
+
 # VDI Lab website (lab.cjhuang.com)
 
 Visual-Driven Intelligence Lab, CGMH Burn Center. Built on

@@ -34,7 +34,8 @@ jobs:
 
       - name: Set root URL
         run: |
-          printf "\n\nurl: ${{ steps.pages.outputs.origin }}" >> _config.yaml
+          # Pages reports an http:// origin (no GitHub-issued cert; HTTPS is served by Cloudflare)
+          printf "\n\nurl: https://${{ steps.pages.outputs.host }}" >> _config.yaml
 
       - name: Build live version of site
         run: |

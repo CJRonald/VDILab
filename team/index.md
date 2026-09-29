@@ -12,5 +12,5 @@ An interdisciplinary team of surgeons and computer scientists from Chang Gung Me
 {% include section.html %}
 
 {% include list.html data="members" component="portrait" filter="role == 'principal-investigator'" %}
-{% include list.html data="members" component="portrait" filter="role == 'faculty'" %}
-{% include list.html data="members" component="portrait" filter="role != 'principal-investigator' and role != 'faculty'" %}
+{% include list.html data="members" component="portrait" filter="role == 'faculty' or role == 'clinical-faculty'" %}
+{% include list.html data="members" component="portrait" filter="role == 'resident' or role == 'masters'" %}

@@ -25,7 +25,7 @@
   image: images/tiles/cgrd.svg
   pillar: burn
   group: featured
-  people: [chih-jung-huang]
+  people: [chih-jung-huang, pin-ru-chen, wei-hsuan-sung]
   status: Ongoing
   description: Outcome research on the Chang Gung Research Database — transfusion strategy, infection, length of stay and reconstructive burden — with rule-based NLP for extracting injury details from clinical notes.
   tags: [burn, big-data, nlp]
@@ -43,7 +43,7 @@
   image: images/tiles/orthognathic.svg
   pillar: face
   group: featured
-  people: [chih-jung-huang]
+  people: [chih-jung-huang, pin-ru-chen, pang-yun-chou]
   status: Ongoing · NSTC-funded
   description: CBCT and 3D-imaging models for predicting unfavorable fractures (bad splits) in sagittal split osteotomy, supporting orthognathic surgical planning.
   tags: [craniofacial, cbct, deep-learning]

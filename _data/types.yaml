@@ -10,6 +10,14 @@ faculty:
   icon: fa-solid fa-chalkboard-user
   description: Faculty Collaborator
 
+clinical-faculty:
+  icon: fa-solid fa-user-doctor
+  description: Clinical Collaborator
+
+resident:
+  icon: fa-solid fa-stethoscope
+  description: Resident Researcher
+
 masters:
   icon: fa-solid fa-user-graduate
   description: Master's Student

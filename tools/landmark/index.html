@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>SlopeSpreader Landmark + 量測 — pilot (build NLA-clj 2026-06-19)</title>
+<style>
+  :root{--bg:#1a1a1a;--panel:#252525;--panel2:#2f2f2f;--text:#e0e0e0;--muted:#888;
+    --accent:#4a9eff;--border:#383838;--ok:#4caf50;--warn:#ffa726;--ang:#ffd166;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+    height:100vh;overflow:hidden;user-select:none;}
+  #app{display:grid;grid-template-columns:1fr 340px;height:100vh;}
+  #stage{position:relative;background:#0a0a0a;overflow:hidden;cursor:crosshair;}
+  #stage.panning{cursor:grab;} #stage.panning.active{cursor:grabbing;}
+  #canvas{position:absolute;top:0;left:0;transform-origin:0 0;image-rendering:-webkit-optimize-contrast;}
+  .dot{position:absolute;border-radius:50%;border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,.8);
+    transform:translate(-50%,-50%);cursor:pointer;z-index:10;}
+  .dot.invisible{opacity:.35;} .dot.vis-0{opacity:.2;border-style:dashed;}
+  svg#overlay{position:absolute;top:0;left:0;pointer-events:none;z-index:8;}
+  #hud{position:absolute;top:10px;left:10px;z-index:30;font-size:12px;background:rgba(0,0,0,.7);
+    padding:6px 10px;border-radius:4px;line-height:1.6;}
+  #hud strong{color:var(--accent);}
+  .help-key{font-family:ui-monospace,monospace;background:var(--border);padding:1px 5px;border-radius:3px;font-size:10px;}
+  #minimap{position:absolute;right:10px;bottom:10px;width:180px;height:180px;background:#000;
+    border:1px solid var(--border);overflow:hidden;z-index:20;opacity:.85;}
+  #minimap img{width:100%;height:100%;object-fit:contain;}
+  #minimap .vp{position:absolute;border:2px solid var(--accent);pointer-events:none;}
+  #panel{background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+  #panel header{padding:12px 14px;background:var(--panel2);border-bottom:1px solid var(--border);}
+  #panel header h1{font-size:14px;font-weight:600;} #panel header .sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .photo-info{padding:8px 14px;font-size:12px;border-bottom:1px solid var(--border);line-height:1.7;}
+  .photo-info .row{display:flex;justify-content:space-between;align-items:center;} .photo-info .row span:first-child{color:var(--muted);}
+  #i-view-sel{background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:4px;
+    padding:2px 6px;font-size:11px;cursor:pointer;} #i-view-sel.unknown{border-color:var(--warn);color:var(--warn);}
+  .toolbar{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--border);}
+  .toolbar button,.nav button{background:var(--panel2);color:var(--text);border:1px solid var(--border);
+    border-radius:5px;padding:5px 9px;font-size:12px;cursor:pointer;}
+  .toolbar button:hover,.nav button:hover{background:var(--border);}
+  .toolbar button.active{border-color:var(--accent);background:rgba(74,158,255,.16);color:#fff;}
+  .landmarks{flex:1;overflow-y:auto;padding:6px 0;}
+  .landmark-row{display:grid;grid-template-columns:22px 1fr 54px;gap:6px;padding:5px 14px;font-size:12px;
+    align-items:center;cursor:pointer;border-left:3px solid transparent;}
+  .landmark-row:hover{background:var(--panel2);} .landmark-row.active{background:var(--panel2);border-left-color:var(--accent);}
+  .landmark-row.pending .name{color:var(--muted);} .landmark-row.vis-low{opacity:.6;}
+  .swatch{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+  .zh{color:var(--muted);font-size:10px;} .idx{color:var(--muted);text-align:right;} .vis{color:var(--muted);text-align:right;position:relative;}
+  .del-x{display:none;margin-left:6px;color:var(--warn);cursor:pointer;font-weight:bold;padding:0 3px;}
+  .landmark-row:hover .del-x{display:inline;} .del-x:hover{color:#ff5252;}
+  #def-box{padding:8px 14px;background:#1e1e1e;border-top:1px solid var(--border);font-size:11px;line-height:1.5;min-height:48px;}
+  #def-box #def-pt{display:block;color:var(--accent);font-weight:600;margin-bottom:2px;}
+  #def-box #def-text{color:var(--muted);}
+  #angles{border-top:1px solid var(--border);padding:10px 14px;background:#202020;}
+  #angles h2{font-size:12px;color:var(--ang);margin-bottom:6px;}
+  .ang-row{display:flex;justify-content:space-between;font-size:12px;padding:2px 0;}
+  .ang-row .v{font-family:ui-monospace,monospace;color:var(--ang);} .ang-row .v.na{color:var(--muted);}
+  .ang-row .lbl{color:var(--text);} .ang-row .lbl small{color:var(--muted);}
+  .ang-more{margin-top:6px;border-top:1px dashed var(--border);padding-top:4px;}
+  .ang-more summary{font-size:11px;color:var(--muted);cursor:pointer;padding:3px 0;list-style:none;user-select:none;}
+  .ang-more summary::before{content:'▸ ';color:var(--accent);}
+  .ang-more[open] summary::before{content:'▾ ';}
+  .ang-more summary:hover{color:var(--text);}
+  .nav{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 14px;border-top:1px solid var(--border);}
+  .nav button.wide{grid-column:span 2;background:var(--accent);color:#fff;border:none;font-weight:600;}
+  .nav button.wide.saved{background:var(--ok);}
+  #picker{position:absolute;inset:0;background:rgba(0,0,0,.92);z-index:100;display:flex;align-items:center;justify-content:center;}
+  #picker .box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:24px;max-width:560px;}
+  #picker h2{font-size:16px;margin-bottom:8px;} #picker p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px;}
+  #picker code{background:var(--border);padding:1px 6px;border-radius:3px;font-size:12px;}
+  #file-list{max-height:200px;overflow-y:auto;margin:12px 0;font-size:12px;}
+  .file-row{padding:3px 0;color:var(--muted);} .view-tag{color:var(--accent);}
+  #drop-zone{border:2px dashed var(--border);border-radius:8px;padding:22px;text-align:center;color:var(--muted);
+    font-size:13px;margin-bottom:12px;transition:.15s;line-height:1.6;}
+  #drop-zone.over{border-color:var(--accent);background:rgba(74,158,255,.08);color:var(--text);}
+  .pick-btns{display:flex;gap:10px;margin-bottom:6px;}
+  .pick-btn{flex:1;text-align:center;background:var(--panel2);border:1px solid var(--border);border-radius:6px;
+    padding:9px;font-size:12px;cursor:pointer;line-height:1.4;} .pick-btn:hover{background:var(--border);}
+  #vis-popup{position:fixed;background:var(--panel2);border:1px solid var(--border);border-radius:6px;
+    padding:6px;z-index:200;display:none;box-shadow:0 4px 16px rgba(0,0,0,.6);}
+  #vis-popup.show{display:block;} #vis-popup .nm{font-size:11px;color:var(--muted);margin-bottom:4px;padding:0 4px;}
+  #vis-popup button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--text);
+    padding:4px 10px;font-size:12px;cursor:pointer;border-radius:4px;} #vis-popup button:hover{background:var(--accent);color:#fff;}
+  #vis-popup button.selected{background:var(--border);}
+  /* ===== Line mode ===== */
+  #line-tools{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--border);align-items:center;}
+  #line-tools .lt-label{font-size:11px;color:var(--muted);width:100%;margin-bottom:2px;}
+  #line-tools button{background:var(--panel2);color:var(--text);border:1px solid var(--border);
+    border-radius:5px;padding:5px 8px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:5px;}
+  #line-tools button:hover{background:var(--border);}
+  #line-tools button.active{border-color:var(--accent);background:rgba(74,158,255,.14);color:#fff;}
+  #line-tools button.done .lt-dot{opacity:1;} #line-tools button .lt-dot{width:9px;height:9px;border-radius:50%;opacity:.3;}
+  #line-tools button .lt-del{display:none;margin-left:5px;color:var(--warn);font-weight:bold;padding:0 3px;border-radius:3px;}
+  #line-tools button.done .lt-del{display:inline;} #line-tools button .lt-del:hover{color:#fff;background:var(--warn);}
+  #stage.linemode{cursor:crosshair;}
+  /* ===== Help overlay ===== */
+  #help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:300;display:none;
+    align-items:center;justify-content:center;padding:24px;}
+  #help-overlay.show{display:flex;}
+  .help-box{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:22px 26px;
+    max-width:860px;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.6);}
+  .help-box h2{font-size:16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:baseline;}
+  .help-box h2 .hk{font-size:11px;color:var(--muted);font-weight:400;}
+  .help-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 28px;}
+  .help-box section h3{font-size:13px;color:var(--accent);margin-bottom:6px;}
+  .help-box ul{list-style:none;font-size:12px;line-height:1.7;color:var(--text);}
+  .help-box li{padding-left:12px;position:relative;}
+  .help-box li::before{content:'·';position:absolute;left:2px;color:var(--muted);}
+  .help-box b{color:#fff;font-weight:600;}
+  .hk{font-family:ui-monospace,monospace;background:var(--border);padding:1px 5px;border-radius:3px;font-size:11px;color:var(--text);}
+  @media(max-width:680px){.help-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="canvas"></canvas>
+    <svg id="overlay"></svg>
+    <div id="hud"><span id="hud-line"></span><br><span id="hud-help"></span></div>
+    <div id="minimap"><img id="minimap-img" alt=""><div class="vp" id="minimap-vp"></div></div>
+  </div>
+  <div id="panel">
+    <header>
+      <h1>SlopeSpreader 量測 + Landmark</h1>
+      <div class="sub">schema v1.1 (17pt) · pilot SS01-08 · 角度即時</div>
+    </header>
+    <div class="photo-info">
+      <div class="row"><span>Photo</span><span id="i-name">—</span></div>
+      <div class="row"><span>View</span>
+        <select id="i-view-sel">
+          <option value="AP">AP（正面）</option>
+          <option value="lateral_L">lateral_L（左側）</option>
+          <option value="lateral_R">lateral_R（右側）</option>
+          <option value="oblique_L">oblique_L（左斜）</option>
+          <option value="oblique_R">oblique_R（右斜）</option>
+          <option value="unknown">unknown（未定）</option>
+        </select>
+      </div>
+      <div class="row"><span>Progress</span><span id="i-prog">0/17</span></div>
+    </div>
+    <div class="toolbar">
+      <button id="t-rot-l">⟲ 90°</button>
+      <button id="t-rot-r">⟳ 90°</button>
+      <button id="t-rot-fine-l" title="逆時針微調 1°">微調 −1°</button>
+      <button id="t-rot-fine">微調 +1°</button>
+      <button id="t-rot-reset">轉正歸零</button>
+      <button id="t-fit">符合視窗</button>
+      <button id="t-grid" title="網格 + 準星（G 開關 · 十字跟游標、點一下釘住才可標點、移動再解鎖 · Shift+G 回正中）">⊞ 網格</button>
+      <button id="t-help" title="使用說明（?）">？ 說明</button>
+      <button id="t-clear">🗑 清除全部（點+線）</button>
+    </div>
+    <div id="line-tools">
+      <span class="lt-label">📏 切線模式（變形鼻 NLA）— 點按鈕後在影像上「拖一條線」貼結構走向；可重拖覆蓋。標好後鈕上出現 ✕ 可刪除重畫；右鍵線改 vis</span>
+      <button id="ltb-columella_tangent" data-line="columella_tangent"><span class="lt-dot" style="background:#FF8C00"></span>Columella 切線<span class="lt-del" data-del="columella_tangent" title="刪除這條線（重畫）">✕</span></button>
+      <button id="ltb-upperlip_tangent" data-line="upperlip_tangent"><span class="lt-dot" style="background:#FFCC50"></span>上唇切線<span class="lt-del" data-del="upperlip_tangent" title="刪除這條線（重畫）">✕</span></button>
+      <button id="ltb-nostril_axis" data-line="nostril_axis"><span class="lt-dot" style="background:#00E0C0"></span>Nostril 軸<span class="lt-del" data-del="nostril_axis" title="刪除這條線（重畫）">✕</span></button>
+      <button id="ltb-frankfort_line" data-line="frankfort_line"><span class="lt-dot" style="background:#9AA0FF"></span>Frankfort 線<span class="lt-del" data-del="frankfort_line" title="刪除這條線（重畫）">✕</span></button>
+    </div>
+    <div class="landmarks" id="landmark-list"></div>
+    <div id="def-box"><span id="def-pt">—</span><span id="def-text">點選左側 landmark 看定義</span></div>
+    <div id="angles">
+      <h2 id="ang-title">📐 即時量測（角度可量、長度為 ratio）</h2>
+      <div id="ang-lateral">
+        <!-- 主力 5（常顯）：NLA tangent / NFA / Dorsal slope / Dorsal curvature / E-line 上唇 -->
+        <div class="ang-row"><span class="lbl">⭐NLA tangent <small>columella↔upperlip 雙切線（主）</small></span><span class="v na" id="a-nla-tan">—</span></div>
+        <div class="ang-row"><span class="lbl">NFA <small>nasofrontal</small></span><span class="v na" id="a-nfa">—</span></div>
+        <div class="ang-row"><span class="lbl">Dorsal slope <small>nasion→pronasale vs vert</small></span><span class="v na" id="a-slope">—</span></div>
+        <div class="ang-row"><span class="lbl">Dorsal curvature <small>nas-rhi-pro</small></span><span class="v na" id="a-curv">—</span></div>
+        <div class="ang-row"><span class="lbl">E-line 上唇 <small>labrale sup→E-line px（+前 −後）</small></span><span class="v na" id="a-eline-u">—</span></div>
+        <!-- 其餘 7（折疊）-->
+        <details class="ang-more">
+          <summary>更多量測（NLA 其他定義 / Goode / E-line 下唇 / 唇高比）</summary>
+          <div class="ang-row"><span class="lbl">NLA point <small>sub-collip-lab（頂點鼻小柱底，對照）</small></span><span class="v na" id="a-nla">—</span></div>
+          <div class="ang-row"><span class="lbl">NLA nostril/vert <small>nostril軸 vs 垂直（輔）</small></span><span class="v na" id="a-nla-nv">—</span></div>
+          <div class="ang-row"><span class="lbl">NLA nostril/FH <small>nostril軸 vs Frankfort⊥（輔）</small></span><span class="v na" id="a-nla-nf">—</span></div>
+          <div class="ang-row"><span class="lbl">NLA def-D <small>nostril軸 vs glabella-pogonion（第4定義）</small></span><span class="v na" id="a-nla-d">—</span></div>
+          <div class="ang-row"><span class="lbl">Goode ratio <small>~0.55-0.6</small></span><span class="v na" id="a-goode">—</span></div>
+          <div class="ang-row"><span class="lbl">E-line 下唇 <small>labrale inf→E-line px（+前 −後）</small></span><span class="v na" id="a-eline-l">—</span></div>
+          <div class="ang-row"><span class="lbl">上下唇高比 <small>labSup→sto : sto→labInf</small></span><span class="v na" id="a-lipratio">—</span></div>
+        </details>
+      </div>
+      <div id="ang-ap">
+        <div class="ang-row"><span class="lbl">DAL 對稱 <small>alare R-L 高低差 px</small></span><span class="v na" id="a-dal">—</span></div>
+        <div class="ang-row"><span class="lbl">Alar base 對稱 <small>base R-L 高低差 px</small></span><span class="v na" id="a-basesym">—</span></div>
+        <div class="ang-row"><span class="lbl">AlarBase/IPD <small>鼻翼寬標準化</small></span><span class="v na" id="a-baseipd">—</span></div>
+        <div class="ang-row"><span class="lbl">Chin deviation <small>pogonion 偏臉中線 px（+右 −左）</small></span><span class="v na" id="a-chindev">—</span></div>
+        <div class="ang-row"><span class="lbl">上下唇高比 <small>labSup→sto : sto→labInf</small></span><span class="v na" id="a-lipratio-ap">—</span></div>
+      </div>
+    </div>
+    <div class="nav">
+      <button id="n-prev">← 上一張</button>
+      <button id="n-next">下一張 →</button>
+      <button id="n-save" class="wide">💾 儲存本張 (Enter)</button>
+      <button id="n-export-json">Export JSON (SimAI 格式)</button>
+      <button id="n-export-csv">Export 量測 CSV</button>
+      <button id="n-purge-orphans" class="wide" style="display:none;">🧹 清非本批照片 (<span id="orphan-n">0</span> 筆孤兒)</button>
+    </div>
+  </div>
+</div>
+
+<div id="picker"><div class="box">
+  <h2>載入照片</h2>
+  <p style="margin-bottom:8px;"><b>Rater ID</b>（你的標註者代號，用於 inter/intra-rater；不同 rater 各自不互蓋）：</p>
+  <input type="text" id="rater-id" placeholder="例：ronald / hsiao / yen / ronald_r2" style="width:100%;padding:7px 9px;margin-bottom:14px;background:var(--panel2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:13px;">
+  <p>三種載入方式（可一次帶全部 case）。檔名前綴 <code>AP_</code> / <code>lateral_L_</code> / <code>lateral_R_</code> 自動辨識 view；無前綴則手動切。<br>
+  <b>照片只在你本機處理、永不上傳。</b></p>
+  <div id="drop-zone">📁 拖曳照片 / 資料夾到這裡<br><small>或用下方按鈕</small></div>
+  <div class="pick-btns">
+    <label class="pick-btn">📂 選整個資料夾（含子資料夾）
+      <input type="file" id="dir-input" webkitdirectory directory multiple accept="image/*" hidden></label>
+    <label class="pick-btn">🖼 選多個檔案
+      <input type="file" id="file-input" multiple accept="image/*" hidden></label>
+  </div>
+  <div id="file-list"></div>
+  <button id="btn-load" disabled>Load</button>
+</div></div>
+
+<div id="help-overlay"><div class="help-box">
+  <h2>使用說明 <span class="hk">Esc / 點空白關閉</span></h2>
+  <div class="help-grid">
+    <section>
+      <h3>🖱 基本操作</h3>
+      <ul>
+        <li>左側選 landmark → 影像上<b>點一下</b>落點（自動跳下一個未標）</li>
+        <li>右鍵點已標的點 → 改 visibility / 刪除</li>
+        <li><b>滾輪</b>縮放 · <span class="hk">空白鍵</span>+拖曳 平移</li>
+        <li>點左側清單列可跳到該點；<span class="hk">✕</span> 刪除單點</li>
+      </ul>
+    </section>
+    <section>
+      <h3>⌨ 快捷鍵</h3>
+      <ul>
+        <li><span class="hk">Enter</span> / 💾 鈕 存本張（不跳張，最後一張也能存）· 下一張用 → 鈕 · <span class="hk">Z</span> 復原</li>
+        <li><span class="hk">R</span> 旋轉 90° · <span class="hk">微調 ±1°</span> 細轉</li>
+        <li><span class="hk">V</span> 改 active 點 vis · <span class="hk">D</span>/<span class="hk">Del</span> 刪 active 點</li>
+        <li><span class="hk">G</span> 網格開關 · <span class="hk">Shift+G</span> 準星回正中</li>
+        <li><span class="hk">Esc</span> 離開切線模式</li>
+      </ul>
+    </section>
+    <section>
+      <h3>⊞ 網格 + 準星</h3>
+      <ul>
+        <li>方格<b>鎖螢幕</b>恆水平垂直（不跟影像轉）→ 當基準把歪臉<b>轉正</b></li>
+        <li>青色十字準星<b>跟游標</b>移動 → <b>點一下釘住</b>（此點不落 landmark）</li>
+        <li>釘住後移動游標 → 自動解鎖再跟</li>
+      </ul>
+    </section>
+    <section>
+      <h3>📏 切線模式（變形鼻 NLA）</h3>
+      <ul>
+        <li>點切線按鈕 → 在影像上<b>拖一條線</b>貼結構走向（不必找端點）</li>
+        <li>可重拖覆蓋；按鈕上 <span class="hk">✕</span> 刪除重畫</li>
+        <li>右鍵點線 → 改 vis / 刪除 · <span class="hk">Esc</span> 離開</li>
+      </ul>
+    </section>
+    <section>
+      <h3>💾 Export</h3>
+      <ul>
+        <li><b>Export JSON</b>：17 點 + 下巴唇 6 點 + 切線（SimAI 格式，供一致性分析）</li>
+        <li><b>Export CSV</b>：各角度/比例量測（依 view 自動填欄）</li>
+        <li>標前先填 <b>Rater ID</b>（不同 rater 不互蓋，供 intra/inter-rater）</li>
+      </ul>
+    </section>
+    <section>
+      <h3>🔒 隱私</h3>
+      <ul>
+        <li>照片<b>只在你本機處理、永不上傳</b>（純前端）</li>
+        <li>標註存瀏覽器 localStorage；換機器需自行 Export 帶走</li>
+        <li>Export 自動跳過無標點的空白照片；舊 session 殘留用「🧹 清非本批照片」清掉（避免污染）</li>
+      </ul>
+    </section>
+  </div>
+</div></div>
+
+<div id="vis-popup">
+  <div class="nm" id="vp-name"></div>
+  <button data-v="1.0">1.0 清晰</button>
+  <button data-v="0.7">0.7 輕度遮</button>
+  <button data-v="0.3">0.3 推測</button>
+  <button data-v="0.0">0.0 不可見（保留 placeholder）</button>
+  <button data-act="del" style="color:var(--warn);border-top:1px solid var(--border);margin-top:2px;">🗑 刪除此點（回未標）</button>
+</div>
+
+<script>
+"use strict";
+console.log('%c[SlopeSpreader build] 23 點（下巴+唇 6 點：pogonion/menton/gnathion/sublabiale/labiale_inferius/stomion）+ E-line + NLA def-D + chin deviation + 上下唇高比 · 2026-06-19','color:#4a9eff;font-weight:bold');
+// ===== Schema v1.1 — 對齊 Rhino_Hsiao_SimAI_Landmark/Annotation/landmark_schema_v1.md =====
+const LANDMARKS=[
+  {key:'nasion',en:'Nasion',zh:'鼻根',color:'#FF3030',def:'鼻額縫最深點軟組織投影（sellion）；側面鼻背最凹處'},
+  {key:'pronasale',en:'Pronasale',zh:'鼻尖',color:'#FF5050',def:'鼻尖最突點'},
+  {key:'subnasale',en:'Subnasale',zh:'鼻下點',color:'#FF7070',def:'鼻小柱與上唇接點正中（鼻底與人中交會）'},
+  {key:'alare_r',en:'Alare R',zh:'右鼻翼緣',color:'#30C030',def:'右鼻翼緣最外側點（病人自己的右＝AP 照觀察者的左）'},
+  {key:'alare_l',en:'Alare L',zh:'左鼻翼緣',color:'#50E050',def:'左鼻翼緣最外側點（病人自己的左＝AP 照觀察者的右）'},
+  {key:'alar_base_r',en:'Alar base R',zh:'右鼻翼基底',color:'#3060FF',def:'右鼻翼與面頰交界最下點（lateral 看不到→vis 0）'},
+  {key:'alar_base_l',en:'Alar base L',zh:'左鼻翼基底',color:'#5080FF',def:'左鼻翼與面頰交界最下點（lateral 看不到→vis 0）'},
+  {key:'columella_lip_jx',en:'Columella-lip',zh:'鼻小柱底',color:'#FFAA00',def:'鼻小柱底與人中接點'},
+  {key:'labiale_superius',en:'Labiale sup.',zh:'上唇紅唇緣',color:'#FFCC50',def:'上唇紅唇邊緣正中點'},
+  {key:'glabella',en:'Glabella',zh:'眉間',color:'#C030FF',def:'兩眉之間額骨最前突軟組織（眼鏡遮→vis 0.3）'},
+  {key:'rhinion',en:'Rhinion',zh:'鼻背中點',color:'#E060FF',def:'鼻骨與軟骨交界軟組織投影；⭐dorsal curvature 關鍵（saddle nose 無 bump 標 dorsum 中點 vis 0.7）'},
+  {key:'medial_canthus_r',en:'Med canthus R',zh:'右內眼角',color:'#00BCD4',def:'右上下眼皮鼻側交點軟組織'},
+  {key:'medial_canthus_l',en:'Med canthus L',zh:'左內眼角',color:'#26C6DA',def:'左上下眼皮鼻側交點軟組織'},
+  {key:'lateral_canthus_r',en:'Lat canthus R',zh:'右外眼角',color:'#0097A7',def:'右上下眼皮顳側交點軟組織'},
+  {key:'lateral_canthus_l',en:'Lat canthus L',zh:'左外眼角',color:'#00ACC1',def:'左上下眼皮顳側交點軟組織'},
+  {key:'pupil_r',en:'Pupil R',zh:'右瞳孔',color:'#FFFFFF',def:'右瞳孔中心（黑色虹膜中心；眼鏡反光遮→vis 0.3）'},
+  {key:'pupil_l',en:'Pupil L',zh:'左瞳孔',color:'#EEEEEE',def:'左瞳孔中心'},
+  // ── 下巴 5 點（slope spreader 專屬擴充，與 SimAI 17 點分叉；JSON 存獨立 extra_landmarks 區）──
+  {key:'pogonion',en:'Pogonion',zh:'頦前點',color:'#FF66B2',def:'軟組織下巴最前突點（lateral 側臉最凸；AP 中線下巴尖）— E-line 下端 / NLA 定義 D / chin deviation',extra:true},
+  {key:'menton',en:'Menton',zh:'頦下點',color:'#FF85C2',def:'下巴輪廓最下點（頦下緣最低，AP/lateral 皆可見）',extra:true},
+  {key:'gnathion',en:'Gnathion',zh:'頦頂點',color:'#FFA3D1',def:'pogonion 與 menton 之間、側臉輪廓最前下點（AP 投影退化→vis 0.4）',extra:true},
+  {key:'sublabiale',en:'Sublabiale',zh:'唇頦溝點',color:'#E060A0',def:'下唇與下巴間凹點（labiomental fold 最深處，AP/lateral 皆可見）',extra:true},
+  {key:'labiale_inferius',en:'Labiale inf.',zh:'下唇紅唇緣',color:'#FFB0D8',def:'下唇紅唇邊緣正中點 — E-line 下唇距離用（AP/lateral 皆可見）',extra:true},
+  {key:'stomion',en:'Stomion',zh:'唇縫正中',color:'#D04080',def:'上下唇接觸正中點（唇閉合縫正中，介於 labiale sup 與 inf）— 上下唇高度比用（AP/lateral 皆可見）',extra:true},
+];
+const LM_IDX=Object.fromEntries(LANDMARKS.map((l,i)=>[l.key,i]));
+const SIMAI_KEYS=LANDMARKS.filter(l=>!l.extra).map(l=>l.key);  // 前 17 = SimAI schema
+const EXTRA_KEYS=LANDMARKS.filter(l=>l.extra).map(l=>l.key);   // 下巴 5 點
+// ===== Tangent lines (deformity-robust NLA; 與 17 點並存) =====
+const LINES=[
+  {key:'columella_tangent',label:'Columella 切線',color:'#FF8C00',def:'沿鼻小柱下緣貼一條切線（變形鼻不必找明確端點，貼走向即可）— NLA 主上臂'},
+  {key:'upperlip_tangent',label:'上唇切線',color:'#FFCC50',def:'沿 cutaneous upper lip（人中）貼一條切線 — NLA 主下臂'},
+  {key:'nostril_axis',label:'Nostril 軸',color:'#00E0C0',def:'鼻孔側臉投影長軸（最前緣↔最後緣）— columella 失效時的輔助上臂（定義 C）'},
+  {key:'frankfort_line',label:'Frankfort 線',color:'#9AA0FF',def:'tragus↔orbitale（眶下緣）切線 — 供 nostril/FH 角度參考（拖一條即可）'},
+];
+const LINE_IDX=Object.fromEntries(LINES.map((l,i)=>[l.key,i]));
+const VIEW_DEFAULTS={
+  AP:{glabella:0.5,rhinion:0,gnathion:0.4,_others:1},
+  lateral_L:{alare_r:0.5,alar_base_r:0,alar_base_l:0,medial_canthus_r:0,lateral_canthus_r:0,pupil_r:0,pupil_l:0.5,medial_canthus_l:0.7,lateral_canthus_l:0.7,_others:1},
+  lateral_R:{alare_l:0.5,alar_base_r:0,alar_base_l:0,medial_canthus_l:0,lateral_canthus_l:0,pupil_l:0,pupil_r:0.5,medial_canthus_r:0.7,lateral_canthus_r:0.7,_others:1},
+  unknown:{_others:1},
+};
+function defVis(view,key){const d=VIEW_DEFAULTS[view]||VIEW_DEFAULTS.unknown;return (key in d)?d[key]:d._others;}
+
+const state={photos:[],current:-1,annotations:{},zoom:1,panX:0,panY:0,rot:0,imgW:0,imgH:0,
+  activeIdx:0,spaceHeld:false,panning:false,panStart:null,history:[],raterId:'anon',
+  lineMode:null,drawing:null,grid:false,gridLocked:false,gridCursor:null};
+const $=id=>document.getElementById(id);
+const stage=$('stage'),canvas=$('canvas'),ctx=canvas.getContext('2d'),overlay=$('overlay'),list=$('landmark-list');
+
+function el(t,a,...k){const e=document.createElement(t);if(a)for(const[x,v]of Object.entries(a)){
+  if(x==='class')e.className=v;else if(x==='style')e.setAttribute('style',v);
+  else if(x.startsWith('on'))e.addEventListener(x.slice(2),v);else e.setAttribute(x,v);}
+  for(const c of k){if(c==null)continue;e.appendChild(typeof c==='object'?c:document.createTextNode(String(c)));}return e;}
+function clear(e){while(e.firstChild)e.removeChild(e.firstChild);}
+
+// HUD help
+$('hud-help').innerHTML='<span class="help-key">wheel</span> zoom · <span class="help-key">space</span>+drag pan · '+
+  '<span class="help-key">R</span> 旋轉 · <span class="help-key">G</span> 網格 · <span class="help-key">V</span> vis · <span class="help-key">Z</span> undo · <span class="help-key">Esc</span> 離開切線 · <span class="help-key">Enter</span> 存本張';
+
+// ===== Picker（3 來源：資料夾遞迴 / 多檔 / 拖曳）=====
+const fileInput=$('file-input'),dirInput=$('dir-input'),btnLoad=$('btn-load');let pending=[];
+function viewFromName(n){const l=n.toLowerCase();
+  if(l.startsWith('ap_'))return'AP';if(l.startsWith('lateral_l_'))return'lateral_L';
+  if(l.startsWith('lateral_r_'))return'lateral_R';if(/oblique_l/.test(l))return'oblique_L';
+  if(/oblique_r/.test(l))return'oblique_R';return'unknown';}
+const isImg=f=>/\.(jpe?g|png)$/i.test(f.name);
+// dedup by name+size，多來源累加不重複
+function setPending(files){
+  const seen=new Set(pending.map(f=>f.name+'|'+f.size));
+  files.filter(isImg).forEach(f=>{const k=f.name+'|'+f.size;if(!seen.has(k)){seen.add(k);pending.push(f);}});
+  pending.sort((a,b)=>a.name.localeCompare(b.name));
+  clear($('file-list'));
+  pending.forEach(f=>$('file-list').appendChild(el('div',{class:'file-row'},f.name+' ',el('span',{class:'view-tag'},'('+viewFromName(f.name)+')'))));
+  btnLoad.disabled=!pending.length;btnLoad.textContent='Load '+pending.length+' photos';}
+fileInput.addEventListener('change',e=>setPending(Array.from(e.target.files)));
+dirInput.addEventListener('change',e=>setPending(Array.from(e.target.files)));
+
+// 拖曳（含資料夾遞迴 webkitGetAsEntry）
+const dz=$('drop-zone');
+['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();if(ev!=='drop')dz.classList.remove('over');}));
+function readEntry(entry,out){return new Promise(res=>{
+  if(entry.isFile){entry.file(f=>{out.push(f);res();},()=>res());}
+  else if(entry.isDirectory){const rd=entry.createReader();const all=[];
+    const readBatch=()=>rd.readEntries(ents=>{
+      if(!ents.length){Promise.all(all.map(e=>readEntry(e,out))).then(res);return;}
+      all.push(...ents);readBatch();},()=>res());
+    readBatch();}
+  else res();});}
+dz.addEventListener('drop',async e=>{dz.classList.remove('over');
+  const items=Array.from(e.dataTransfer.items||[]);
+  const entries=items.map(it=>it.webkitGetAsEntry&&it.webkitGetAsEntry()).filter(Boolean);
+  if(entries.length){const out=[];await Promise.all(entries.map(en=>readEntry(en,out)));setPending(out);}
+  else setPending(Array.from(e.dataTransfer.files||[]));});
+btnLoad.addEventListener('click',()=>{
+  const rid=($('rater-id').value||'').trim().replace(/[^a-zA-Z0-9_\-]/g,'_');
+  state.raterId=rid||'anon';
+  state.photos=pending.map(f=>({file:f,name:f.name,view:viewFromName(f.name),url:URL.createObjectURL(f)}));
+  $('picker').style.display='none';loadCache();showPhoto(0);refreshOrphanBtn();
+  document.querySelector('#panel header .sub').textContent='schema v1.1 (17pt) · rater: '+state.raterId;});
+
+// ===== localStorage（key 帶 rater，inter/intra-rater 各自不互蓋）=====
+const LS_BASE='slope_spreader_landmark_pilot';
+function lsKey(){return LS_BASE+'__'+state.raterId;}
+function loadCache(){try{state.annotations=JSON.parse(localStorage.getItem(lsKey())||'{}');}catch{state.annotations={};}}
+function save(){localStorage.setItem(lsKey(),JSON.stringify(state.annotations));}
+// 一筆 annotation 是否「有實際內容」（≥1 landmark 或 ≥1 line）→ Export 跳過空白 placeholder（showPhoto 一進就建殼，未標的不該污染輸出）
+function hasContent(a){return !!a&&((a.landmarks&&Object.keys(a.landmarks).length>0)||(a.lines&&Object.keys(a.lines).length>0));}
+
+// ===== Photo =====
+function showPhoto(idx){
+  if(idx<0||idx>=state.photos.length)return;state.current=idx;const p=state.photos[idx];
+  const img=new Image();img.onload=()=>{
+    state.imgW=img.naturalWidth;state.imgH=img.naturalHeight;
+    canvas.width=state.imgW;canvas.height=state.imgH;ctx.drawImage(img,0,0);
+    canvas.style.width=state.imgW+'px';canvas.style.height=state.imgH+'px';
+    $('minimap-img').src=p.url;state.rot=0;
+    if(!state.annotations[p.name])state.annotations[p.name]={photoName:p.name,view:p.view,rot:0,landmarks:{},lines:{},startTime:Date.now()};
+  if(!state.annotations[p.name].lines)state.annotations[p.name].lines={};
+  if(!state.annotations[p.name].gridMid)state.annotations[p.name].gridMid={x:state.imgW/2,y:state.imgH/2};  // 中線初值=影像中心，可拖
+  state.lineMode=null;state.drawing=null;
+    state.activeIdx=nextEmpty();state.history=[];
+    fitView();
+    renderAll();};
+  img.src=p.url;}
+function nextEmpty(){const a=state.annotations[state.photos[state.current].name];
+  for(let i=0;i<LANDMARKS.length;i++)if(!a.landmarks[LANDMARKS[i].key])return i;return LANDMARKS.length-1;}
+function fitView(){const r=stage.getBoundingClientRect();const f=Math.min(r.width/state.imgW,r.height/state.imgH);
+  state.zoom=Math.min(f*0.95,4);state.panX=(r.width-state.imgW*state.zoom)/2;state.panY=(r.height-state.imgH*state.zoom)/2;applyT();}
+function applyT(){
+  canvas.style.transform=`translate(${state.panX}px,${state.panY}px) scale(${state.zoom}) rotate(${state.rot}deg)`;
+  renderDots();renderMinimap();renderOverlay();}
+
+// ===== coord (含旋轉) =====
+// ⚠️ 必須精確反解 CSS canvas transform：transform-origin:0 0；transform: translate(pan) scale(zoom) rotate(rot)
+// 即 screen = pan + zoom · Rot_origin0(image)。旋轉繞原點(0,0)不繞中心 — 舊版誤用 imgW/2 中心項導致 rot≠0 時落點/反算分岔（轉著標的點 export 跑掉 261px@15°）
+function clientToImage(cx,cy){
+  const r=stage.getBoundingClientRect();
+  const x=(cx-r.left-state.panX)/state.zoom, y=(cy-r.top-state.panY)/state.zoom;
+  const a=-state.rot*Math.PI/180;  // 反旋轉，繞原點
+  return {x:x*Math.cos(a)-y*Math.sin(a), y:x*Math.sin(a)+y*Math.cos(a)};}
+function imageToScreen(ix,iy){
+  const a=state.rot*Math.PI/180;  // 正旋轉，繞原點
+  const rx=ix*Math.cos(a)-iy*Math.sin(a), ry=ix*Math.sin(a)+iy*Math.cos(a);
+  return {x:state.panX+rx*state.zoom, y:state.panY+ry*state.zoom};}
+
+function renderDots(){
+  document.querySelectorAll('.dot').forEach(e=>e.remove());
+  const p=state.photos[state.current];if(!p)return;const a=state.annotations[p.name];
+  Object.entries(a.landmarks).forEach(([k,lm])=>{
+    const d=LANDMARKS[LM_IDX[k]];const s=imageToScreen(lm.x,lm.y);const cls=['dot'];
+    if(lm.vis<0.5)cls.push('invisible');if(lm.vis===0)cls.push('vis-0');
+    const dot=el('div',{class:cls.join(' '),title:d.en+' · vis '+lm.vis,'data-key':k,
+      style:`left:${s.x}px;top:${s.y}px;width:14px;height:14px;background:${d.color};`});
+    dot.addEventListener('contextmenu',e=>{e.preventDefault();openVis(e.clientX,e.clientY,k);});
+    stage.appendChild(dot);});}
+
+function renderMinimap(){
+  const r=stage.getBoundingClientRect(),mm=$('minimap').getBoundingClientRect(),vp=$('minimap-vp');
+  const ir=state.imgW/state.imgH,mr=mm.width/mm.height;let w,h,ox,oy;
+  if(ir>mr){w=mm.width;h=mm.width/ir;ox=0;oy=(mm.height-h)/2;}else{h=mm.height;w=mm.height*ir;oy=0;ox=(mm.width-w)/2;}
+  const vl=-state.panX/state.zoom,vt=-state.panY/state.zoom,vw=r.width/state.zoom,vh=r.height/state.zoom,sc=w/state.imgW;
+  vp.style.left=(ox+vl*sc)+'px';vp.style.top=(oy+vt*sc)+'px';vp.style.width=(vw*sc)+'px';vp.style.height=(vh*sc)+'px';}
+
+// 網格 + 中線 overlay（螢幕座標 → 永遠水平垂直，不跟影像旋轉；當正交基準把歪臉轉正）
+// 方格隨 zoom 縮放、隨 pan 平移（貼影像但不轉）；中線位置記在影像座標 gridMid，畫時投影成正交十字
+function drawGrid(){
+  const r=stage.getBoundingClientRect();
+  const svgLine=(x1,y1,x2,y2,col,w,dash)=>{
+    const e=document.createElementNS('http://www.w3.org/2000/svg','line');
+    e.setAttribute('x1',x1);e.setAttribute('y1',y1);e.setAttribute('x2',x2);e.setAttribute('y2',y2);
+    e.setAttribute('stroke',col);e.setAttribute('stroke-width',w);if(dash)e.setAttribute('stroke-dasharray',dash);
+    overlay.appendChild(e);};
+  // 等距方格：以影像長邊 1/48 為格距，乘 zoom = 螢幕格距；對齊影像原點(0,0)的螢幕投影（pan 連動、不旋轉）
+  const N=48,stepImg=Math.max(state.imgW,state.imgH)/N,step=stepImg*state.zoom;
+  if(step>=3){  // 太密就不畫，避免雜訊
+    const o=imageToScreen(0,0);  // 影像原點螢幕位置（含 pan，rot=0 時即左上角）
+    // 從原點對齊向左/上補滿、向右/下補滿整個 stage（細線 0.5px，灰半透明）
+    let x0=o.x%step;if(x0>0)x0-=step;for(let x=x0;x<=r.width;x+=step)svgLine(x,0,x,r.height,'rgba(128,128,128,0.4)',0.5);
+    let y0=o.y%step;if(y0>0)y0-=step;for(let y=y0;y<=r.height;y+=step)svgLine(0,y,r.width,y,'rgba(128,128,128,0.4)',0.5);}
+  // 準星十字：未鎖 → 跟游標即時移動（screen 座標）；鎖定 → 釘在 gridMid（image 座標）
+  const a=state.annotations[state.photos[state.current]?.name];
+  let sm;
+  if(state.gridLocked){const m=(a&&a.gridMid)||{x:state.imgW/2,y:state.imgH/2};sm=imageToScreen(m.x,m.y);}
+  else sm=state.gridCursor||{x:r.width/2,y:r.height/2};
+  const col=state.gridLocked?'rgba(74,222,238,0.85)':'rgba(74,222,238,0.55)';  // 鎖定較實，跟游標較淡
+  svgLine(sm.x,0,sm.x,r.height,col,1.6,'8 5');  // 垂直準星
+  svgLine(0,sm.y,r.width,sm.y,col,1.6,'8 5');  // 水平準星
+  const h=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  h.setAttribute('cx',sm.x);h.setAttribute('cy',sm.y);h.setAttribute('r',state.gridLocked?'4':'3');
+  h.setAttribute('fill',col);h.setAttribute('stroke','#000');h.setAttribute('stroke-width','1');overlay.appendChild(h);}
+
+// 畫鼻背線 overlay（glabella-nasion-rhinion-pronasale）+ NLA point 兩臂（sub-collip-lab）
+function renderOverlay(){
+  const r=stage.getBoundingClientRect();overlay.setAttribute('width',r.width);overlay.setAttribute('height',r.height);
+  clear(overlay);const p=state.photos[state.current];if(!p)return;const a=state.annotations[p.name];
+  if(state.grid)drawGrid();  // 網格畫在最底層（dots/lines 疊其上）
+  const seg=(k1,k2,col)=>{const l1=a.landmarks[k1],l2=a.landmarks[k2];if(!l1||!l2)return;
+    const s1=imageToScreen(l1.x,l1.y),s2=imageToScreen(l2.x,l2.y);
+    const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+    ln.setAttribute('x1',s1.x);ln.setAttribute('y1',s1.y);ln.setAttribute('x2',s2.x);ln.setAttribute('y2',s2.y);
+    ln.setAttribute('stroke',col);ln.setAttribute('stroke-width','1.5');ln.setAttribute('stroke-dasharray','4 3');overlay.appendChild(ln);};
+  seg('glabella','nasion','#C030FF');seg('nasion','rhinion','#ffd166');seg('rhinion','pronasale','#ffd166');
+  // NLA point overlay = 頂點鼻小柱底：subnasale→columella_lip_jx→labiale_superius（對齊 angle3(sub,clj,lab)）
+  seg('subnasale','columella_lip_jx','#FF7070');seg('columella_lip_jx','labiale_superius','#FFCC50');
+  // E-line（Ricketts 審美平面）= pronasale→pogonion（lateral 側臉嘴唇凸度參考）
+  seg('pronasale','pogonion','#00D0FF');
+  // tangent lines (solid, thicker, with endpoint handles)
+  const drawTangent=(ln,col,vis)=>{
+    const s1=imageToScreen(ln.x1,ln.y1),s2=imageToScreen(ln.x2,ln.y2);
+    const e=document.createElementNS('http://www.w3.org/2000/svg','line');
+    e.setAttribute('x1',s1.x);e.setAttribute('y1',s1.y);e.setAttribute('x2',s2.x);e.setAttribute('y2',s2.y);
+    e.setAttribute('stroke',col);e.setAttribute('stroke-width',vis<0.5?'2':'2.6');
+    e.setAttribute('opacity',vis<0.5?'0.5':'1');if(vis<0.5)e.setAttribute('stroke-dasharray','6 4');overlay.appendChild(e);
+    [[s1.x,s1.y],[s2.x,s2.y]].forEach(([cx,cy])=>{const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx',cx);c.setAttribute('cy',cy);c.setAttribute('r','3.5');c.setAttribute('fill',col);overlay.appendChild(c);});};
+  for(const L of LINES){const ln=a.lines&&a.lines[L.key];if(ln)drawTangent(ln,L.color,ln.vis==null?1:ln.vis);}
+  // live preview while dragging
+  if(state.drawing){const col=LINES[LINE_IDX[state.drawing.key]].color;
+    drawTangent({x1:state.drawing.x1,y1:state.drawing.y1,x2:state.drawing.x2,y2:state.drawing.y2},col,1);}}
+
+// ===== Landmark list =====
+function renderList(){
+  const a=state.annotations[state.photos[state.current]?.name];if(!a)return;clear(list);
+  LANDMARKS.forEach((lm,i)=>{const pl=a.landmarks[lm.key];const cls=['landmark-row',pl?'done':'pending'];
+    if(i===state.activeIdx)cls.push('active');if(pl&&pl.vis<0.5)cls.push('vis-low');
+    const visCell=el('div',{class:'vis'},'vis '+(pl?pl.vis.toFixed(1):'-'));
+    if(pl){const xb=el('span',{class:'del-x',title:'刪除此點（回未標，可重標）'},'✕');
+      xb.addEventListener('click',ev=>{ev.stopPropagation();deletePoint(lm.key);});visCell.appendChild(xb);}
+    const row=el('div',{class:cls.join(' '),title:(i+1)+'. '+lm.en+'（'+lm.zh+'）\n'+lm.def},el('div',{class:'idx'},i+1),
+      el('div',null,el('span',{class:'swatch',style:'background:'+lm.color}),
+        el('span',{class:'name'},lm.en+' ',el('span',{class:'zh'},lm.zh))),
+      visCell);
+    row.addEventListener('click',()=>{state.activeIdx=i;renderList();});list.appendChild(row);});
+  const cnt=Object.keys(a.landmarks).length;$('i-prog').textContent=cnt+'/'+LANDMARKS.length;
+  $('i-name').textContent=state.photos[state.current].name;
+  const vsel=$('i-view-sel');vsel.value=a.view;vsel.classList.toggle('unknown',a.view==='unknown');
+  // 定義框：顯示 active landmark 定義
+  const act=LANDMARKS[state.activeIdx];
+  if(act){$('def-pt').textContent=(state.activeIdx+1)+'. '+act.en+'（'+act.zh+'）';$('def-text').textContent=act.def;}}
+
+// ===== 角度計算 =====
+function getPt(a,k){const lm=a.landmarks[k];return (lm&&lm.vis>=0.5)?lm:null;}
+function angle3(A,B,C){ // angle at B
+  const v1={x:A.x-B.x,y:A.y-B.y},v2={x:C.x-B.x,y:C.y-B.y};
+  const dot=v1.x*v2.x+v1.y*v2.y,m1=Math.hypot(v1.x,v1.y),m2=Math.hypot(v2.x,v2.y);
+  if(!m1||!m2)return null;return Math.acos(Math.max(-1,Math.min(1,dot/(m1*m2))))*180/Math.PI;}
+function angleVert(A,B){ // angle of line A→B from vertical
+  const dx=B.x-A.x,dy=B.y-A.y;return Math.abs(Math.atan2(dx,dy)*180/Math.PI);}
+function getLine(a,k){const ln=a.lines&&a.lines[k];return (ln&&(ln.vis==null||ln.vis>=0.5))?ln:null;}
+function lineVec(ln){return {x:ln.x2-ln.x1,y:ln.y2-ln.y1};}
+function angleBetween(v1,v2){ // unsigned 0-180 between two direction vectors
+  const dot=v1.x*v2.x+v1.y*v2.y,m1=Math.hypot(v1.x,v1.y),m2=Math.hypot(v2.x,v2.y);
+  if(!m1||!m2)return null;return Math.acos(Math.max(-1,Math.min(1,dot/(m1*m2))))*180/Math.PI;}
+// signed perpendicular distance of point P to line A→B (sign: + on one side, − on other)
+function signedDistToLine(P,A,B){const dx=B.x-A.x,dy=B.y-A.y,L=Math.hypot(dx,dy);
+  if(!L)return null;return ((P.x-A.x)*dy-(P.y-A.y)*dx)/L;}
+function nlaTangent(col,lip){ // NLA = angle between two tangent lines (report obtuse nasolabial convention)
+  if(!col||!lip)return null;const a=angleBetween(lineVec(col),lineVec(lip));if(a==null)return null;
+  return a;} // both drawn root→tip consistently; raw between-line angle = NLA
+function isLateralView(v){return v==='lateral_L'||v==='lateral_R'||v==='oblique_L'||v==='oblique_R';}
+function renderAngles(){
+  const a=state.annotations[state.photos[state.current]?.name];if(!a)return;
+  const set=(id,val,unit)=>{const e=$(id);if(val==null){e.textContent='—';e.classList.add('na');}
+    else{e.textContent=val.toFixed(1)+(unit===undefined?'°':unit);e.classList.remove('na');}};
+  // 依 view 只顯示該算的角度區塊（避免在錯 view 算出無意義數值）
+  const lat=isLateralView(a.view), ap=(a.view==='AP');
+  $('ang-lateral').style.display=lat?'block':'none';
+  $('ang-ap').style.display=ap?'block':'none';
+  $('ang-title').textContent=lat?'📐 側面量測（lateral）':ap?'📐 正面量測（AP）':'📐 量測（view 未定，手動選 view）';
+  const gla=getPt(a,'glabella'),nas=getPt(a,'nasion'),pro=getPt(a,'pronasale'),
+    sub=getPt(a,'subnasale'),lab=getPt(a,'labiale_superius'),rhi=getPt(a,'rhinion'),
+    clj=getPt(a,'columella_lip_jx'),pog=getPt(a,'pogonion'),labI=getPt(a,'labiale_inferius'),sto=getPt(a,'stomion'),
+    alR=getPt(a,'alare_r'),alL=getPt(a,'alare_l'),baR=getPt(a,'alar_base_r'),baL=getPt(a,'alar_base_l'),
+    puR=getPt(a,'pupil_r'),puL=getPt(a,'pupil_l');
+  if(lat){
+    set('a-nfa', (gla&&nas&&pro)?angle3(gla,nas,pro):null);
+    set('a-slope',(nas&&pro)?angleVert(nas,pro):null);
+    set('a-curv',(nas&&rhi&&pro)?angle3(nas,rhi,pro):null);
+    // NLA — tangent (主) / point (對照) / nostril vs vertical / nostril vs Frankfort⊥ (輔)
+    const colT=getLine(a,'columella_tangent'),lipT=getLine(a,'upperlip_tangent'),
+      nosA=getLine(a,'nostril_axis'),frk=getLine(a,'frankfort_line');
+    set('a-nla-tan',(colT&&lipT)?nlaTangent(colT,lipT):null);
+    set('a-nla', (sub&&clj&&lab)?angle3(sub,clj,lab):null);  // 頂點 columella_lip_jx
+    // nostril axis vs vertical: angle of nostril-axis line from image vertical
+    set('a-nla-nv', nosA?angleVert({x:nosA.x1,y:nosA.y1},{x:nosA.x2,y:nosA.y2}):null);
+    // nostril axis vs Frankfort-perpendicular = (90 − angle between nostril axis & Frankfort line)
+    let nf=null;if(nosA&&frk){const ab=angleBetween(lineVec(nosA),lineVec(frk));if(ab!=null)nf=Math.abs(90-(ab>90?180-ab:ab));}
+    set('a-nla-nf', nf);
+    // NLA 定義 D = nostril 軸 vs glabella–pogonion 連線（vertical facial plane）；報與該平面夾角
+    let nd=null;if(nosA&&gla&&pog){const ab=angleBetween(lineVec(nosA),{x:pog.x-gla.x,y:pog.y-gla.y});if(ab!=null)nd=ab>90?180-ab:ab;}
+    set('a-nla-d', nd);
+    set('a-goode',(nas&&pro&&sub)?(Math.hypot(nas.x-pro.x,nas.y-pro.y)/Math.hypot(pro.x-sub.x,pro.y-sub.y)):null,'');
+    // E-line = pronasale→pogonion；唇到線的 signed 垂直距離（號意=哪一側，正負由標註左右朝向決定，報原始值供比對）
+    set('a-eline-u',(pro&&pog&&lab)?signedDistToLine(lab,pro,pog):null,' px');
+    set('a-eline-l',(pro&&pog&&labI)?signedDistToLine(labI,pro,pog):null,' px');
+    set('a-lipratio',(lab&&sto&&labI)?(Math.hypot(lab.x-sto.x,lab.y-sto.y)/Math.hypot(sto.x-labI.x,sto.y-labI.y)):null,'');
+  } else if(ap){
+    set('a-dal',(alR&&alL)?Math.abs(alR.y-alL.y):null,' px');
+    set('a-basesym',(baR&&baL)?Math.abs(baR.y-baL.y):null,' px');
+    const ipd=(puR&&puL)?Math.hypot(puR.x-puL.x,puR.y-puL.y):null;
+    set('a-baseipd',(baR&&baL&&ipd)?(Math.hypot(baR.x-baL.x,baR.y-baL.y)/ipd):null,'');
+    // Chin deviation = pogonion 偏離臉部正中線（glabella→subnasale）的 signed 垂直距離
+    set('a-chindev',(pog&&gla&&sub)?signedDistToLine(pog,gla,sub):null,' px');
+    set('a-lipratio-ap',(lab&&sto&&labI)?(Math.hypot(lab.x-sto.x,lab.y-sto.y)/Math.hypot(sto.x-labI.x,sto.y-labI.y)):null,'');
+  }}
+
+function renderAll(){renderList();applyT();renderAngles();if(typeof refreshLineBtns==='function')refreshLineBtns();}
+
+// ===== Place / vis popup =====
+stage.addEventListener('click',e=>{
+  if(state.spaceHeld||state.panning)return;if(e.target.classList.contains('dot'))return;
+  if(state.lineMode){return;}  // 線模式下點擊不落點
+  if(state.justDrewLine){state.justDrewLine=false;return;}  // 剛拖完線的 click 事件忽略
+  // 準星跟游標未鎖 → 這次點擊只鎖定十字，不落 landmark（鎖定後才可標點）
+  if(state.grid&&!state.gridLocked){const a2=state.annotations[state.photos[state.current]?.name];
+    const p=clientToImage(e.clientX,e.clientY);
+    if(a2){a2.gridMid={x:p.x,y:p.y};save();}state.gridLocked=true;renderOverlay();return;}
+  const a=state.annotations[state.photos[state.current].name];const key=LANDMARKS[state.activeIdx].key;
+  const pt=clientToImage(e.clientX,e.clientY);
+  pushHistory(a);
+  a.landmarks[key]={x:Math.round(pt.x),y:Math.round(pt.y),vis:defVis(a.view,key)};
+  save();if(state.activeIdx<LANDMARKS.length-1)state.activeIdx=nextEmpty();renderAll();});
+
+const vp=$('vis-popup');
+function openVis(x,y,key){vp.style.left=x+'px';vp.style.top=y+'px';vp.classList.add('show');vp.setAttribute('data-key',key);
+  $('vp-name').textContent=LANDMARKS[LM_IDX[key]].en;
+  const cur=state.annotations[state.photos[state.current].name].landmarks[key].vis;
+  vp.querySelectorAll('button').forEach(b=>b.classList.toggle('selected',parseFloat(b.getAttribute('data-v'))===cur));}
+vp.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+  const lineKey=vp.getAttribute('data-linekey');vp.classList.remove('show');vp.setAttribute('data-linekey','');
+  const a=state.annotations[state.photos[state.current].name];
+  if(lineKey){ // 對切線操作
+    if(b.getAttribute('data-act')==='del'){pushHistory(a);delete a.lines[lineKey];}
+    else a.lines[lineKey].vis=parseFloat(b.getAttribute('data-v'));
+    save();renderAll();refreshLineBtns();return;}
+  const key=vp.getAttribute('data-key');if(!key)return;
+  if(b.getAttribute('data-act')==='del'){deletePoint(key);return;}  // 刪除回未標
+  const v=parseFloat(b.getAttribute('data-v'));
+  a.landmarks[key].vis=v;save();renderAll();}));
+document.addEventListener('click',e=>{if(!vp.contains(e.target)&&!e.target.classList.contains('dot'))vp.classList.remove('show');});
+
+// ===== zoom / pan =====
+stage.addEventListener('wheel',e=>{e.preventDefault();const r=stage.getBoundingClientRect();
+  const mx=e.clientX-r.left,my=e.clientY-r.top;const f=e.deltaY<0?1.12:1/1.12;
+  const nz=Math.max(0.1,Math.min(12,state.zoom*f));
+  state.panX=mx-(mx-state.panX)*(nz/state.zoom);state.panY=my-(my-state.panY)*(nz/state.zoom);state.zoom=nz;applyT();},{passive:false});
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'){state.spaceHeld=true;stage.classList.add('panning');e.preventDefault();}
+  else if(e.key==='z'||e.key==='Z')undo();
+  else if(e.key==='r'||e.key==='R'){rotateTo(state.rot+90);}
+  else if(e.key==='g'||e.key==='G'){if(e.shiftKey){recenterGrid();}else toggleGrid();}
+  else if(e.key==='Enter'){saveThis();}
+  else if(e.key==='v'||e.key==='V'){const a=state.annotations[state.photos[state.current]?.name];
+    const k=LANDMARKS[state.activeIdx].key;if(a&&a.landmarks[k]){const s=imageToScreen(a.landmarks[k].x,a.landmarks[k].y);openVis(s.x,s.y,k);}}
+  else if(e.key==='Escape'){
+    if(helpOv.classList.contains('show')){helpOv.classList.remove('show');return;}  // 先關說明層
+    if(state.lineMode){state.lineMode=null;state.drawing=null;refreshLineBtns();renderOverlay();}}
+  else if(e.key==='d'||e.key==='D'||e.key==='Delete'||e.key==='Backspace'){
+    if(state.lineMode)return;  // 線模式下不刪點
+    e.preventDefault();deletePoint(LANDMARKS[state.activeIdx].key);}});
+document.addEventListener('keyup',e=>{if(e.code==='Space'){state.spaceHeld=false;state.panning=false;stage.classList.remove('panning','active');}});
+stage.addEventListener('mousedown',e=>{
+  if(state.spaceHeld){state.panning=true;stage.classList.add('active');state.panStart={x:e.clientX-state.panX,y:e.clientY-state.panY};return;}
+  // line mode: begin dragging a tangent line
+  if(state.lineMode&&e.button===0){e.preventDefault();const p=clientToImage(e.clientX,e.clientY);
+    state.drawing={key:state.lineMode,x1:p.x,y1:p.y,x2:p.x,y2:p.y};}});
+document.addEventListener('mousemove',e=>{
+  if(state.panning&&state.panStart){state.panX=e.clientX-state.panStart.x;state.panY=e.clientY-state.panStart.y;applyT();return;}
+  if(state.drawing){const p=clientToImage(e.clientX,e.clientY);state.drawing.x2=p.x;state.drawing.y2=p.y;
+    // 拖切線時十字也跟著走（純視覺基準）
+    if(state.grid){const r=stage.getBoundingClientRect();state.gridCursor={x:e.clientX-r.left,y:e.clientY-r.top};}
+    renderOverlay();return;}
+  // 準星十字：grid 開、未按空白鍵時跟游標
+  if(state.grid&&!state.spaceHeld){
+    const r=stage.getBoundingClientRect();state.gridCursor={x:e.clientX-r.left,y:e.clientY-r.top};
+    if(state.gridLocked)state.gridLocked=false;  // 鎖定後一移動就解鎖（line mode 下本就不鎖）
+    renderOverlay();}});
+document.addEventListener('mouseup',()=>{
+  state.panning=false;stage.classList.remove('active');
+  if(state.drawing){const d=state.drawing;state.drawing=null;
+    // ignore micro-drags (treat as accidental click)
+    if(Math.hypot(d.x2-d.x1,d.y2-d.y1)>=6){const a=state.annotations[state.photos[state.current]?.name];
+      if(a){if(!a.lines)a.lines={};pushHistory(a);
+        a.lines[d.key]={x1:Math.round(d.x1),y1:Math.round(d.y1),x2:Math.round(d.x2),y2:Math.round(d.y2),vis:1.0};
+        state.justDrewLine=true;save();renderAll();}}
+    else renderOverlay();}});
+// history 快照同時涵蓋 點 + 線（Z 復原兩者皆可回）
+function pushHistory(a){state.history.push({landmarks:JSON.parse(JSON.stringify(a.landmarks)),lines:JSON.parse(JSON.stringify(a.lines||{}))});}
+function undo(){const a=state.annotations[state.photos[state.current]?.name];if(!a||!state.history.length)return;
+  const h=state.history.pop();a.landmarks=h.landmarks;a.lines=h.lines||{};
+  state.activeIdx=nextEmpty();save();renderAll();}
+// 刪除單一已標點 → 回未標狀態（可重標）；push history 可 undo
+function deletePoint(key){const a=state.annotations[state.photos[state.current]?.name];
+  if(!a||!a.landmarks[key])return;
+  pushHistory(a);
+  delete a.landmarks[key];
+  state.activeIdx=LM_IDX[key];  // 設為被刪點，方便立刻重標
+  save();renderAll();}
+// 清除整張所有點（需確認）
+function clearAllPoints(){const a=state.annotations[state.photos[state.current]?.name];
+  if(!a)return;
+  const nPt=Object.keys(a.landmarks).length, nLn=Object.keys(a.lines||{}).length;
+  if(!nPt&&!nLn)return;
+  if(!confirm('清除這張照片所有已標點 + 切線？（可 Z 復原）'))return;
+  pushHistory(a);
+  a.landmarks={};a.lines={};state.activeIdx=0;state.lineMode=null;save();renderAll();}
+
+// ===== toolbar =====
+// 手動改 view（沒前綴 / 判錯時用）：寫回 annotation，重算量測 + 套 vis 預設到「未標」點
+$('i-view-sel').addEventListener('change',e=>{
+  const a=state.annotations[state.photos[state.current]?.name];if(!a)return;
+  a.view=e.target.value;
+  // 同步更新 photo 物件（影響 nextEmpty 之類）+ 對「尚未標」的點套新 view 的 vis 預設
+  // 已標點不動其 vis（使用者可能已手動調過），未標點不存 placeholder，僅供下次 place 時取 defVis
+  state.photos[state.current].view=a.view;
+  save();renderAll();});
+// ===== line tools =====
+function refreshLineBtns(){const a=state.annotations[state.photos[state.current]?.name];
+  LINES.forEach(L=>{const b=$('ltb-'+L.key);if(!b)return;
+    b.classList.toggle('active',state.lineMode===L.key);
+    b.classList.toggle('done',!!(a&&a.lines&&a.lines[L.key]));});
+  stage.classList.toggle('linemode',!!state.lineMode);}
+// 刪除一條線（回未標，可重畫）；push history 可 Z 復原
+function deleteLine(key){const a=state.annotations[state.photos[state.current]?.name];
+  if(!a||!a.lines||!a.lines[key])return;
+  pushHistory(a);  // 點+線同軌，Z 可復原
+  delete a.lines[key];
+  state.lineMode=key;  // 設為該線模式，方便立刻重畫
+  $('def-pt').textContent='📏 '+LINES[LINE_IDX[key]].label+'（切線）';$('def-text').textContent=LINES[LINE_IDX[key]].def;
+  save();renderAll();}
+LINES.forEach(L=>{$('ltb-'+L.key).addEventListener('click',e=>{
+  // 點到 ✕ → 刪除這條線（不切換線模式）
+  if(e.target.classList.contains('lt-del')){e.stopPropagation();deleteLine(e.target.getAttribute('data-del'));return;}
+  state.lineMode=(state.lineMode===L.key)?null:L.key;   // 再點同顆 = 取消
+  if(state.lineMode){$('def-pt').textContent='📏 '+L.label+'（切線）';$('def-text').textContent=L.def;}
+  refreshLineBtns();});});
+// 右鍵切線 → vis / 刪除（複用 overlay：點在線附近時觸發）
+overlay.addEventListener('contextmenu',e=>{
+  const a=state.annotations[state.photos[state.current]?.name];if(!a||!a.lines)return;
+  // 找最近的線（screen 距離 < 10px）
+  let hit=null,best=10;const mx=e.clientX,my=e.clientY,r=stage.getBoundingClientRect();
+  for(const L of LINES){const ln=a.lines[L.key];if(!ln)continue;
+    const s1=imageToScreen(ln.x1,ln.y1),s2=imageToScreen(ln.x2,ln.y2);
+    const d=distToSeg(mx-r.left,my-r.top,s1.x,s1.y,s2.x,s2.y);if(d<best){best=d;hit=L.key;}}
+  if(hit){e.preventDefault();openLineMenu(e.clientX,e.clientY,hit);}});
+function distToSeg(px,py,x1,y1,x2,y2){const dx=x2-x1,dy=y2-y1,L2=dx*dx+dy*dy;
+  if(!L2)return Math.hypot(px-x1,py-y1);let t=((px-x1)*dx+(py-y1)*dy)/L2;t=Math.max(0,Math.min(1,t));
+  return Math.hypot(px-(x1+t*dx),py-(y1+t*dy));}
+function openLineMenu(x,y,key){const a=state.annotations[state.photos[state.current].name];
+  vp.style.left=x+'px';vp.style.top=y+'px';vp.classList.add('show');vp.setAttribute('data-linekey',key);vp.setAttribute('data-key','');
+  $('vp-name').textContent=LINES[LINE_IDX[key]].label+'（切線）';
+  const cur=a.lines[key].vis==null?1:a.lines[key].vis;
+  vp.querySelectorAll('button').forEach(b=>b.classList.toggle('selected',parseFloat(b.getAttribute('data-v'))===cur));}
+// 旋轉時繞「影像中心目前的螢幕位置」旋轉，避免 origin:0,0 讓影像甩出視窗（座標已正確，這只調 pan 維持視覺置中）
+function rotateTo(newRot){
+  const cx=state.imgW/2, cy=state.imgH/2;
+  const before=imageToScreen(cx,cy);      // 旋轉前影像中心在螢幕的位置
+  state.rot=(newRot%360+360)%360;
+  const after=imageToScreen(cx,cy);       // 旋轉後（同 pan）影像中心會跑到哪
+  state.panX+=before.x-after.x;            // 補回 pan 讓中心留在原螢幕位置
+  state.panY+=before.y-after.y;
+  applyT();}
+$('t-rot-l').onclick=()=>rotateTo(state.rot-90);
+$('t-rot-r').onclick=()=>rotateTo(state.rot+90);
+$('t-rot-fine').onclick=()=>rotateTo(state.rot+1);
+$('t-rot-fine-l').onclick=()=>rotateTo(state.rot-1);
+$('t-rot-reset').onclick=()=>rotateTo(0);
+$('t-fit').onclick=fitView;
+function toggleGrid(){state.grid=!state.grid;state.gridLocked=false;  // 開啟預設「跟游標」態
+  $('t-grid').classList.toggle('active',state.grid);renderOverlay();}
+function recenterGrid(){const a=state.annotations[state.photos[state.current]?.name];if(!a)return;
+  a.gridMid={x:state.imgW/2,y:state.imgH/2};state.gridLocked=true;save();
+  if(!state.grid){state.grid=true;$('t-grid').classList.add('active');}renderOverlay();}
+$('t-grid').onclick=toggleGrid;
+const helpOv=$('help-overlay');
+$('t-help').onclick=()=>helpOv.classList.add('show');
+helpOv.addEventListener('click',e=>{if(e.target===helpOv)helpOv.classList.remove('show');});  // 點背景關
+$('t-clear').onclick=clearAllPoints;
+$('n-prev').onclick=()=>showPhoto(state.current-1);
+$('n-next').onclick=()=>showPhoto(state.current+1);
+$('n-save').onclick=saveThis;
+// 儲存本張（不跳張）— 任何張都能存，含最後一張；按了閃一下回饋讓你確認
+function saveThis(){save();
+  const b=$('n-save');const orig=b.textContent;
+  b.textContent='✅ 已存';b.classList.add('saved');
+  setTimeout(()=>{b.textContent=orig;b.classList.remove('saved');},900);}
+
+// ===== Export =====
+function download(name,content,type){const blob=new Blob([content],{type});const u=URL.createObjectURL(blob);
+  const a=el('a',{href:u,download:name});document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);}
+$('n-export-json').onclick=()=>{
+  // SimAI 格式 + rater：每張 photo → {key:{x,y,vis}}（對齊 rhino_landmark_annotations.landmark_json）
+  const out={rater_id:state.raterId,schema:'v1.1',exported:new Date().toISOString(),photos:{}};
+  for(const[name,a]of Object.entries(state.annotations)){
+    if(!hasContent(a))continue;  // 跳過無標點/線的空白殼（孤兒清理 #1）
+    // landmark_json 保持 SimAI 17 點乾淨；下巴 5 點獨立存 extra_landmarks
+    const lm={};SIMAI_KEYS.forEach(k=>{const p=a.landmarks[k];lm[k]=p?{x:p.x,y:p.y,vis:p.vis}:{x:0,y:0,vis:0};});
+    const extra={};EXTRA_KEYS.forEach(k=>{const p=a.landmarks[k];extra[k]=p?{x:p.x,y:p.y,vis:p.vis}:{x:0,y:0,vis:0};});
+    const lines={};LINES.forEach(L=>{const ln=a.lines&&a.lines[L.key];if(ln)lines[L.key]={x1:ln.x1,y1:ln.y1,x2:ln.x2,y2:ln.y2,vis:ln.vis==null?1:ln.vis};});
+    out.photos[name]={photoName:name,view:a.view,rater_id:state.raterId,schema:'v1.1',landmark_json:lm,extra_landmarks:extra,tangent_lines:lines,grid_midline:a.gridMid||null};}
+  download('landmarks_'+state.raterId+'_v1.1.json',JSON.stringify(out,null,2),'application/json');};
+$('n-export-csv').onclick=()=>{
+  // CSV 帶 rater_id（inter/intra-rater：多 rater 檔合併後依 photo×rater 算 ICC/κ）
+  // 依 view 填對應欄；非該 view 的指標留空（避免錯 view 數值污染分析）
+  const rows=[['rater_id','photo','view','NFA_deg','dorsal_slope_deg','dorsal_curvature_deg',
+    'NLA_tangent_deg','NLA_point_deg','NLA_nostril_vert_deg','NLA_nostril_FH_deg','NLA_defD_deg',
+    'Goode_ratio','Eline_upperlip_px','Eline_lowerlip_px','lip_height_ratio','DAL_sym_px','alarbase_sym_px','alarbase_IPD_ratio','chin_dev_px']];
+  for(const[name,a]of Object.entries(state.annotations)){
+    if(!hasContent(a))continue;  // 跳過空白殼（孤兒清理 #1）
+    const g=k=>{const lm=a.landmarks[k];return(lm&&lm.vis>=0.5)?lm:null;};
+    const gL=k=>{const ln=a.lines&&a.lines[k];return(ln&&(ln.vis==null||ln.vis>=0.5))?ln:null;};
+    const gla=g('glabella'),nas=g('nasion'),pro=g('pronasale'),sub=g('subnasale'),lab=g('labiale_superius'),rhi=g('rhinion'),
+      clj=g('columella_lip_jx'),pog=g('pogonion'),labI=g('labiale_inferius'),sto=g('stomion'),
+      alR=g('alare_r'),alL=g('alare_l'),baR=g('alar_base_r'),baL=g('alar_base_l'),puR=g('pupil_r'),puL=g('pupil_l');
+    const colT=gL('columella_tangent'),lipT=gL('upperlip_tangent'),nosA=gL('nostril_axis'),frk=gL('frankfort_line');
+    const f=v=>v==null?'':v.toFixed(2);
+    const lat=isLateralView(a.view), ap=(a.view==='AP');
+    const ipd=(puR&&puL)?Math.hypot(puR.x-puL.x,puR.y-puL.y):null;
+    let nf=null;if(lat&&nosA&&frk){const ab=angleBetween(lineVec(nosA),lineVec(frk));if(ab!=null)nf=Math.abs(90-(ab>90?180-ab:ab));}
+    let nd=null;if(lat&&nosA&&gla&&pog){const ab=angleBetween(lineVec(nosA),{x:pog.x-gla.x,y:pog.y-gla.y});if(ab!=null)nd=ab>90?180-ab:ab;}
+    rows.push([state.raterId,name,a.view,
+      f(lat&&gla&&nas&&pro?angle3(gla,nas,pro):null),
+      f(lat&&nas&&pro?angleVert(nas,pro):null),
+      f(lat&&nas&&rhi&&pro?angle3(nas,rhi,pro):null),
+      f(lat&&colT&&lipT?nlaTangent(colT,lipT):null),
+      f(lat&&sub&&clj&&lab?angle3(sub,clj,lab):null),  // 頂點 columella_lip_jx
+      f(lat&&nosA?angleVert({x:nosA.x1,y:nosA.y1},{x:nosA.x2,y:nosA.y2}):null),
+      f(nf),
+      f(nd),
+      f(lat&&nas&&pro&&sub?(Math.hypot(nas.x-pro.x,nas.y-pro.y)/Math.hypot(pro.x-sub.x,pro.y-sub.y)):null),
+      f(lat&&pro&&pog&&lab?signedDistToLine(lab,pro,pog):null),
+      f(lat&&pro&&pog&&labI?signedDistToLine(labI,pro,pog):null),
+      f(lab&&sto&&labI?(Math.hypot(lab.x-sto.x,lab.y-sto.y)/Math.hypot(sto.x-labI.x,sto.y-labI.y)):null),
+      f(ap&&alR&&alL?Math.abs(alR.y-alL.y):null),
+      f(ap&&baR&&baL?Math.abs(baR.y-baL.y):null),
+      f(ap&&baR&&baL&&ipd?(Math.hypot(baR.x-baL.x,baR.y-baL.y)/ipd):null),
+      f(ap&&pog&&gla&&sub?signedDistToLine(pog,gla,sub):null)]);}
+  download('measurements_'+state.raterId+'.csv',rows.map(r=>r.join(',')).join('\n'),'text/csv');};
+
+// ===== 孤兒照片清理（#1）：localStorage 裡不在「目前載入清單」的 annotation key =====
+function orphanKeys(){const loaded=new Set(state.photos.map(p=>p.name));
+  return Object.keys(state.annotations).filter(k=>!loaded.has(k));}
+function refreshOrphanBtn(){const btn=$('n-purge-orphans');if(!btn)return;
+  const orphans=orphanKeys();
+  if(orphans.length){$('orphan-n').textContent=orphans.length;btn.style.display='';}
+  else btn.style.display='none';}
+$('n-purge-orphans').onclick=()=>{
+  const orphans=orphanKeys();if(!orphans.length)return;
+  const sample=orphans.slice(0,6).join('\n');
+  if(!confirm('清除 '+orphans.length+' 筆「不在目前載入清單」的孤兒標註？\n（這些是舊 session / 誤載殘留，清掉避免污染 Export）\n\n'+sample+(orphans.length>6?'\n…':'')))return;
+  orphans.forEach(k=>delete state.annotations[k]);
+  save();refreshOrphanBtn();
+  alert('已清除 '+orphans.length+' 筆孤兒標註。');};
+
+window.addEventListener('resize',()=>{if(state.current>=0)applyT();});
+</script>
+</body>
+</html>

@@ -68,6 +68,8 @@ sass:
 include:
   - _styles
   - _scripts
+  # keep GitHub Pages from re-running Jekyll on the built gh-pages output
+  - .nojekyll
 
 # force jekyll to exclude certain files/folders
 exclude:

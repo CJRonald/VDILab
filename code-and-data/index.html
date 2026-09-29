@@ -44,43 +44,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>Code and Data | VDI Lab</title>
+<link rel="canonical" href="http://lab.cjhuang.com/code-and-data/">
 
-<link rel="icon" href="/images/icon.png">
 
-<meta name="title" content="Code and Data">
-<meta name="description" content="Visual-Driven Intelligence Lab · CGMH Burn Center. Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.">
+<link rel="icon" href="http://lab.cjhuang.com/images/icon.png">
 
-<meta property="og:title" content="Code and Data">
-<meta property="og:site_title" content="VDI Lab">
-<meta property="og:description" content="Visual-Driven Intelligence Lab · CGMH Burn Center. Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.">
-<meta property="og:url" content="http://lab.cjhuang.com">
-<meta property="og:image" content="">
+<meta name="title" content="Code and Data | VDI Lab">
+<meta name="description" content="Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.">
+
+<meta property="og:title" content="Code and Data | VDI Lab">
+<meta property="og:site_name" content="VDI Lab">
+<meta property="og:description" content="Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.">
+<meta property="og:url" content="http://lab.cjhuang.com/code-and-data/">
+<meta property="og:image" content="http://lab.cjhuang.com/images/share.png">
+<meta property="og:image:alt" content="VDI Lab logo">
 <meta property="og:locale" content="en_US">
 
-<meta property="twitter:title" content="Code and Data">
-<meta property="twitter:description" content="Visual-Driven Intelligence Lab · CGMH Burn Center. Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.">
-<meta property="twitter:url" content="http://lab.cjhuang.com">
-<meta property="twitter:card" content="summary_large_image">
-<meta property="twitter:image" content="">
+<meta name="twitter:title" content="Code and Data | VDI Lab">
+<meta name="twitter:description" content="Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.">
+<meta name="twitter:url" content="http://lab.cjhuang.com/code-and-data/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://lab.cjhuang.com/images/share.png">
+<meta name="twitter:image:alt" content="VDI Lab logo">
 
 
   <meta property="og:type" content="website">
+
 
 
 <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     
-      "@type": "WebSite",
+      "@type": "WebPage",
     
     "name": "Code and Data",
-    "description": "Visual-Driven Intelligence Lab · CGMH Burn Center. Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.",
+    "description": "Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.",
     "headline": "Code and Data",
     "publisher": {
       "@type": "Organization",
-      "logo": { "@type": "ImageObject", "url": "/images/icon.png" }
+      "name": "VDI Lab",
+      "logo": { "@type": "ImageObject", "url": "http://lab.cjhuang.com/images/icon.png" }
     },
-    "url": "http://lab.cjhuang.com"
+    "url": "http://lab.cjhuang.com/code-and-data/"
   }
 </script>
 
@@ -530,6 +536,15 @@
 
 <h2 id="public-demos">Public demos</h2>
 
+<div class="search-box">
+  <input type="text" class="search-input" oninput="onSearchInput(this)" placeholder="Search items on this page" aria-label="Search items on this page">
+  <button disabled data-tooltip="Clear search" aria-label="clear search" onclick="onSearchClear()">
+    <i class="icon fa-solid fa-magnifying-glass"></i>
+  </button>
+</div>
+
+<div class="search-info"></div>
+
 <div class="cols" style="--cols: 2">
   
     
@@ -552,7 +567,7 @@
 
     
       <p>
-        Upload a burn photograph and see the wound outlined by a deep-supervision UNet++. Images are processed in memory and not stored.
+        A deep-supervision UNet++ model that outlines burn wounds in photographs. Images are processed in memory and not stored.
 
       </p>
     

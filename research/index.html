@@ -44,43 +44,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>Research | VDI Lab</title>
+<link rel="canonical" href="http://lab.cjhuang.com/research/">
 
-<link rel="icon" href="/images/icon.png">
 
-<meta name="title" content="Research">
-<meta name="description" content="Visual-Driven Intelligence Lab · CGMH Burn Center. Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.">
+<link rel="icon" href="http://lab.cjhuang.com/images/icon.png">
 
-<meta property="og:title" content="Research">
-<meta property="og:site_title" content="VDI Lab">
-<meta property="og:description" content="Visual-Driven Intelligence Lab · CGMH Burn Center. Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.">
-<meta property="og:url" content="http://lab.cjhuang.com">
-<meta property="og:image" content="">
+<meta name="title" content="Research | VDI Lab">
+<meta name="description" content="Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.">
+
+<meta property="og:title" content="Research | VDI Lab">
+<meta property="og:site_name" content="VDI Lab">
+<meta property="og:description" content="Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.">
+<meta property="og:url" content="http://lab.cjhuang.com/research/">
+<meta property="og:image" content="http://lab.cjhuang.com/images/share.png">
+<meta property="og:image:alt" content="VDI Lab logo">
 <meta property="og:locale" content="en_US">
 
-<meta property="twitter:title" content="Research">
-<meta property="twitter:description" content="Visual-Driven Intelligence Lab · CGMH Burn Center. Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.">
-<meta property="twitter:url" content="http://lab.cjhuang.com">
-<meta property="twitter:card" content="summary_large_image">
-<meta property="twitter:image" content="">
+<meta name="twitter:title" content="Research | VDI Lab">
+<meta name="twitter:description" content="Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.">
+<meta name="twitter:url" content="http://lab.cjhuang.com/research/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://lab.cjhuang.com/images/share.png">
+<meta name="twitter:image:alt" content="VDI Lab logo">
 
 
   <meta property="og:type" content="website">
+
 
 
 <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     
-      "@type": "WebSite",
+      "@type": "WebPage",
     
     "name": "Research",
-    "description": "Visual-Driven Intelligence Lab · CGMH Burn Center. Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.",
+    "description": "Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.",
     "headline": "Research",
     "publisher": {
       "@type": "Organization",
-      "logo": { "@type": "ImageObject", "url": "/images/icon.png" }
+      "name": "VDI Lab",
+      "logo": { "@type": "ImageObject", "url": "http://lab.cjhuang.com/images/icon.png" }
     },
-    "url": "http://lab.cjhuang.com"
+    "url": "http://lab.cjhuang.com/research/"
   }
 </script>
 
@@ -508,7 +514,16 @@
 <i class="icon fa-solid fa-microscope"></i>Research</h1>
 
 <p>Quantitative clinical research and AI methods across four surgical domains.
-Every model is trained with patient-level data splits and reported with discrimination metrics appropriate for imbalanced outcomes.</p>
+Our methods standard is patient-level train/test splitting and discrimination metrics suited to imbalanced outcomes.</p>
+
+<div class="search-box">
+  <input type="text" class="search-input" oninput="onSearchInput(this)" placeholder="Search items on this page" aria-label="Search items on this page">
+  <button disabled data-tooltip="Clear search" aria-label="clear search" onclick="onSearchClear()">
+    <i class="icon fa-solid fa-magnifying-glass"></i>
+  </button>
+</div>
+
+<div class="search-info"></div>
   </section>
 
   
@@ -529,24 +544,31 @@ Every model is trained with patient-level data splits and reported with discrimi
 
   
 <div class="project-card">
-  <a class="project-card-image" href="https://huggingface.co/spaces/CJRonald/burn-segmentation-demo" aria-label="Burn wound segmentation">
+  
+    <a class="project-card-image" href="https://huggingface.co/spaces/CJRonald/burn-segmentation-demo" aria-label="Burn wound segmentation">
+  
     <img src="/images/tiles/burn-segmentation.svg" alt="Burn wound segmentation" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
   </a>
   <div class="project-card-text">
-    <a class="project-card-title" href="https://huggingface.co/spaces/CJRonald/burn-segmentation-demo">Burn wound segmentation</a>
+    <h3 class="project-card-title">
+      <a href="https://huggingface.co/spaces/CJRonald/burn-segmentation-demo">
+      Burn wound segmentation
+      </a>
+    </h3>
     <div class="project-card-people">
       
         
         
           <a href="/members/chih-jung-huang.html" class="project-card-person" data-tooltip="Chih-Jung (Ronald) Huang, MD">
-            <img src="/images/team/CJHuang.jpg" alt="Chih-Jung (Ronald) Huang, MD" loading="lazy">
+            <img src="/images/team/CJHuang.jpg" alt="Chih-Jung (Ronald) Huang, MD" width="32" height="32" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
           </a>
         
       
     </div>
     <span class="project-card-status">Ongoing · public demo</span>
-    <p>Deep-supervision UNet++ that outlines burn wounds on clinical photographs, as a first step toward objective TBSA and depth assessment.
-</p>
+    <div class="project-card-description">
+<p>Deep-supervision UNet++ that outlines burn wounds on clinical photographs, as a first step toward objective TBSA and depth assessment.</p>
+</div>
     
 
 
@@ -573,45 +595,52 @@ Every model is trained with patient-level data splits and reported with discrimi
 
   
 <div class="project-card">
-  <a class="project-card-image" aria-label="Inhalation injury prediction">
+  
+    <div class="project-card-image">
+  
     <img src="/images/tiles/inhalation.svg" alt="Inhalation injury prediction" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
-  </a>
+  </div>
   <div class="project-card-text">
-    <a class="project-card-title">Inhalation injury prediction</a>
+    <h3 class="project-card-title">
+      
+      Inhalation injury prediction
+      
+    </h3>
     <div class="project-card-people">
       
         
         
           <a href="/members/chih-jung-huang.html" class="project-card-person" data-tooltip="Chih-Jung (Ronald) Huang, MD">
-            <img src="/images/team/CJHuang.jpg" alt="Chih-Jung (Ronald) Huang, MD" loading="lazy">
+            <img src="/images/team/CJHuang.jpg" alt="Chih-Jung (Ronald) Huang, MD" width="32" height="32" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
           </a>
         
       
         
         
           <a href="/members/wei-chun-chen.html" class="project-card-person" data-tooltip="Wei-Chun Chen">
-            <img src="/images/team/WCChen.jpg" alt="Wei-Chun Chen" loading="lazy">
+            <img src="/images/team/WCChen.jpg" alt="Wei-Chun Chen" width="32" height="32" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
           </a>
         
       
         
         
           <a href="/members/i-fang-chung.html" class="project-card-person" data-tooltip="I-Fang Chung, PhD">
-            <img src="/images/team/IFChang.jpg" alt="I-Fang Chung, PhD" loading="lazy">
+            <img src="/images/team/IFChang.jpg" alt="I-Fang Chung, PhD" width="32" height="32" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
           </a>
         
       
         
         
           <a href="/members/ying-jia-lin.html" class="project-card-person" data-tooltip="Ying-Jia Lin, PhD">
-            <img src="/images/team/YJLin.jpg" alt="Ying-Jia Lin, PhD" loading="lazy">
+            <img src="/images/team/YJLin.jpg" alt="Ying-Jia Lin, PhD" width="32" height="32" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
           </a>
         
       
     </div>
     <span class="project-card-status">Ongoing</span>
-    <p>Machine-learning prediction of inhalation injury from admission data (Burns, 2023), now extended to multimodal deep learning.
-</p>
+    <div class="project-card-description">
+<p>Machine-learning prediction of inhalation injury from admission data (Burns, 2023), now extended to multimodal deep learning.</p>
+</div>
     
 
 
@@ -638,38 +667,45 @@ Every model is trained with patient-level data splits and reported with discrimi
 
   
 <div class="project-card">
-  <a class="project-card-image" aria-label="Burn outcomes from CGRD">
+  
+    <div class="project-card-image">
+  
     <img src="/images/tiles/cgrd.svg" alt="Burn outcomes from CGRD" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
-  </a>
+  </div>
   <div class="project-card-text">
-    <a class="project-card-title">Burn outcomes from CGRD</a>
+    <h3 class="project-card-title">
+      
+      Burn outcomes from CGRD
+      
+    </h3>
     <div class="project-card-people">
       
         
         
           <a href="/members/chih-jung-huang.html" class="project-card-person" data-tooltip="Chih-Jung (Ronald) Huang, MD">
-            <img src="/images/team/CJHuang.jpg" alt="Chih-Jung (Ronald) Huang, MD" loading="lazy">
+            <img src="/images/team/CJHuang.jpg" alt="Chih-Jung (Ronald) Huang, MD" width="32" height="32" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
           </a>
         
       
         
         
           <a href="/members/pin-ru-chen.html" class="project-card-person" data-tooltip="Pin-Ru Chen, MD">
-            <img src="" alt="Pin-Ru Chen, MD" loading="lazy">
+            <img src="/images/fallback.svg" alt="Pin-Ru Chen, MD" width="32" height="32" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
           </a>
         
       
         
         
           <a href="/members/wei-hsuan-sung.html" class="project-card-person" data-tooltip="Wei-Hsuan Sung, MD">
-            <img src="" alt="Wei-Hsuan Sung, MD" loading="lazy">
+            <img src="/images/fallback.svg" alt="Wei-Hsuan Sung, MD" width="32" height="32" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
           </a>
         
       
     </div>
     <span class="project-card-status">Ongoing</span>
-    <p>Outcome research on the Chang Gung Research Database — transfusion strategy, infection, length of stay and reconstructive burden — with rule-based NLP for extracting injury details from clinical notes.
-</p>
+    <div class="project-card-description">
+<p>Outcome research on the Chang Gung Research Database — transfusion strategy, infection, length of stay and reconstructive burden — with rule-based NLP for extracting injury details from clinical notes.</p>
+</div>
     
 
 
@@ -715,24 +751,31 @@ Every model is trained with patient-level data splits and reported with discrimi
 
   
 <div class="project-card">
-  <a class="project-card-image" aria-label="Quantitative rhinoplasty">
+  
+    <div class="project-card-image">
+  
     <img src="/images/tiles/rhinoplasty.svg" alt="Quantitative rhinoplasty" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
-  </a>
+  </div>
   <div class="project-card-text">
-    <a class="project-card-title">Quantitative rhinoplasty</a>
+    <h3 class="project-card-title">
+      
+      Quantitative rhinoplasty
+      
+    </h3>
     <div class="project-card-people">
       
         
         
           <a href="/members/chih-jung-huang.html" class="project-card-person" data-tooltip="Chih-Jung (Ronald) Huang, MD">
-            <img src="/images/team/CJHuang.jpg" alt="Chih-Jung (Ronald) Huang, MD" loading="lazy">
+            <img src="/images/team/CJHuang.jpg" alt="Chih-Jung (Ronald) Huang, MD" width="32" height="32" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
           </a>
         
       
     </div>
     <span class="project-card-status">Ongoing</span>
-    <p>Landmark-based measurement of pre- and post-operative nasal form, with reliability-tested annotation tools, for reproducible aesthetic evaluation and outcome prediction.
-</p>
+    <div class="project-card-description">
+<p>Landmark-based measurement of pre- and post-operative nasal form, with reliability-tested annotation tools, for reproducible aesthetic evaluation and outcome prediction.</p>
+</div>
     
 
 
@@ -759,45 +802,52 @@ Every model is trained with patient-level data splits and reported with discrimi
 
   
 <div class="project-card">
-  <a class="project-card-image" aria-label="Orthognathic bad-split prediction">
+  
+    <div class="project-card-image">
+  
     <img src="/images/tiles/orthognathic.svg" alt="Orthognathic bad-split prediction" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
-  </a>
+  </div>
   <div class="project-card-text">
-    <a class="project-card-title">Orthognathic bad-split prediction</a>
+    <h3 class="project-card-title">
+      
+      Orthognathic bad-split prediction
+      
+    </h3>
     <div class="project-card-people">
       
         
         
           <a href="/members/chih-jung-huang.html" class="project-card-person" data-tooltip="Chih-Jung (Ronald) Huang, MD">
-            <img src="/images/team/CJHuang.jpg" alt="Chih-Jung (Ronald) Huang, MD" loading="lazy">
+            <img src="/images/team/CJHuang.jpg" alt="Chih-Jung (Ronald) Huang, MD" width="32" height="32" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
           </a>
         
       
         
         
           <a href="/members/pin-ru-chen.html" class="project-card-person" data-tooltip="Pin-Ru Chen, MD">
-            <img src="" alt="Pin-Ru Chen, MD" loading="lazy">
+            <img src="/images/fallback.svg" alt="Pin-Ru Chen, MD" width="32" height="32" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
           </a>
         
       
         
         
           <a href="/members/pang-yun-chou.html" class="project-card-person" data-tooltip="Pang-Yun Chou, MD, PhD">
-            <img src="" alt="Pang-Yun Chou, MD, PhD" loading="lazy">
+            <img src="/images/fallback.svg" alt="Pang-Yun Chou, MD, PhD" width="32" height="32" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
           </a>
         
       
         
         
           <a href="/members/pei-chen-huang.html" class="project-card-person" data-tooltip="Pei-Chen Huang, MS">
-            <img src="" alt="Pei-Chen Huang, MS" loading="lazy">
+            <img src="/images/fallback.svg" alt="Pei-Chen Huang, MS" width="32" height="32" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
           </a>
         
       
     </div>
     <span class="project-card-status">Ongoing · NSTC-funded</span>
-    <p>CBCT and 3D-imaging models for predicting unfavorable fractures (bad splits) in sagittal split osteotomy, supporting orthognathic surgical planning.
-</p>
+    <div class="project-card-description">
+<p>CBCT and 3D-imaging models for predicting unfavorable fractures (bad splits) in sagittal split osteotomy, supporting orthognathic surgical planning.</p>
+</div>
     
 
 
@@ -843,24 +893,31 @@ Every model is trained with patient-level data splits and reported with discrimi
 
   
 <div class="project-card">
-  <a class="project-card-image" href="https://huggingface.co/spaces/CJRonald/flap-prediction-demo" aria-label="Flap perfusion AI">
+  
+    <a class="project-card-image" href="https://huggingface.co/spaces/CJRonald/flap-prediction-demo" aria-label="Flap perfusion AI">
+  
     <img src="/images/tiles/flap.svg" alt="Flap perfusion AI" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
   </a>
   <div class="project-card-text">
-    <a class="project-card-title" href="https://huggingface.co/spaces/CJRonald/flap-prediction-demo">Flap perfusion AI</a>
+    <h3 class="project-card-title">
+      <a href="https://huggingface.co/spaces/CJRonald/flap-prediction-demo">
+      Flap perfusion AI
+      </a>
+    </h3>
     <div class="project-card-people">
       
         
         
           <a href="/members/chih-jung-huang.html" class="project-card-person" data-tooltip="Chih-Jung (Ronald) Huang, MD">
-            <img src="/images/team/CJHuang.jpg" alt="Chih-Jung (Ronald) Huang, MD" loading="lazy">
+            <img src="/images/team/CJHuang.jpg" alt="Chih-Jung (Ronald) Huang, MD" width="32" height="32" loading="lazy" onerror="this.src = '/images/fallback.svg'; this.onerror = null;">
           </a>
         
       
     </div>
     <span class="project-card-status">Ongoing · public demo</span>
-    <p>Image-based assessment of free-flap circulation, from ICG fluorescence perfusion segmentation to a ResNet18 model that classifies flap status from a region of interest.
-</p>
+    <div class="project-card-description">
+<p>Image-based assessment of free-flap circulation, from ICG fluorescence perfusion segmentation to a ResNet18 model that classifies flap status from a region of interest.</p>
+</div>
     
 
 

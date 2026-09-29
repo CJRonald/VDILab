@@ -1,0 +1,63 @@
+# DO NOT EDIT, GENERATED AUTOMATICALLY
+
+- id: doi:10.1016/j.burns.2023.03.011
+  title: Machine learning approach for predicting inhalation injury in patients with
+    burns
+  authors:
+  - Shih-Yi Yang
+  - Chih-Jung Huang
+  - Cheng-I. Yen
+  - Yu-Ching Kao
+  - Yen-Chang Hsiao
+  - Jui-Yung Yang
+  - Shu-Yin Chang
+  - Shiow-Shuh Chuang
+  - Hung-Chang Chen
+  publisher: Burns
+  date: '2023-11-01'
+  link: https://doi.org/hckws3
+  type: paper
+  tags:
+  - burn
+  - machine-learning
+  plugin: sources.py
+  file: sources.yaml
+- id: doi:10.1093/asj/sjag079
+  title: 'Efficacy of Combined Septal Extension and Derotation Grafts in Asian Rhinoplasty:
+    A Quantitative Analysis of Tip Projection and Stability'
+  authors:
+  - Chih-Jung Huang
+  - Tzong-Yueh Tsai
+  - Cheng-I Yen
+  - Hung-Chang Chen
+  - Chun-Shin Chang
+  - Yen-Chang Hsiao
+  publisher: Aesthetic Surgery Journal
+  date: '2026-04-16'
+  link: https://doi.org/hckwth
+  type: paper
+  tags:
+  - rhinoplasty
+  - measurement
+  plugin: sources.py
+  file: sources.yaml
+- id: doi:10.1097/PRS.0000000000012647
+  title: 'Triangular Fossa Cartilage Graft in Rhinoplasty: A Three-Dimensional Anatomical
+    and Technical Feasibility Study'
+  authors:
+  - Chih-Jung Huang
+  - Cheng-I Yen
+  - Chun-Shin Chang
+  - Hung-Chang Chen
+  - Shih-Yi Yang
+  - Shu-Yin Chang
+  - Yen-Chang Hsiao
+  publisher: Plastic &amp; Reconstructive Surgery
+  date: '2025-12-03'
+  link: https://doi.org/hckwtj
+  type: paper
+  tags:
+  - rhinoplasty
+  - 3d
+  plugin: sources.py
+  file: sources.yaml

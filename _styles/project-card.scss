@@ -1,0 +1,76 @@
+---
+---
+
+.project-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 30px;
+  margin: 40px 0;
+}
+
+.project-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--background);
+  border-radius: var(--rounded);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: transform var(--transition);
+}
+
+.project-card:hover {
+  transform: translateY(-3px);
+}
+
+.project-card-image img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 8 / 5;
+  object-fit: cover;
+}
+
+.project-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  text-align: left;
+}
+
+.project-card-text .tags {
+  justify-content: flex-start;
+}
+
+.project-card-text p {
+  margin: 0;
+  text-align: left;
+  line-height: var(--compact);
+}
+
+.project-card-title {
+  font-family: var(--heading);
+  font-size: var(--large);
+  font-weight: var(--semi-bold);
+  text-decoration: none;
+}
+
+.project-card-people {
+  display: flex;
+  gap: 6px;
+}
+
+.project-card-person img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: var(--shadow);
+}
+
+.project-card-status {
+  color: var(--gray);
+  font-size: 0.9rem;
+  font-weight: var(--semi-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

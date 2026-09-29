@@ -1,0 +1,24 @@
+{% assign project = include.project %}
+<div class="project-card">
+  <a class="project-card-image"
+    {% if project.link %}href="{{ project.link | relative_url | uri_escape }}"{% endif %}
+    aria-label="{{ project.title | regex_strip }}">
+    <img src="{{ project.image | relative_url | uri_escape }}" alt="{{ project.title | regex_strip }}" loading="lazy" {% include fallback.html %}>
+  </a>
+  <div class="project-card-text">
+    <a class="project-card-title" {% if project.link %}href="{{ project.link | relative_url | uri_escape }}"{% endif %}>{{ project.title }}</a>
+    <div class="project-card-people">
+      {% for slug in project.people %}
+        {% assign member = site.members | where_exp: "m", "m.slug == slug" | first %}
+        {% if member %}
+          <a href="{{ member.url | relative_url }}" class="project-card-person" data-tooltip="{{ member.name | xml_escape }}">
+            <img src="{{ member.image | relative_url | uri_escape }}" alt="{{ member.name | xml_escape }}" loading="lazy">
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% if project.status %}<span class="project-card-status">{{ project.status }}</span>{% endif %}
+    <p>{{ project.description | markdownify | remove: "<p>" | remove: "</p>" }}</p>
+    {% include tags.html tags=project.tags %}
+  </div>
+</div>

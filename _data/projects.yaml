@@ -1,0 +1,59 @@
+# Research projects shown as cards on the home and research pages.
+# image: placeholder tiles in images/tiles/ -- replace with de-identified graphical abstracts.
+# people: member file names (without .md) from _members/
+
+- title: Burn wound segmentation
+  image: images/tiles/burn-segmentation.svg
+  link: https://huggingface.co/spaces/CJRonald/burn-segmentation-demo
+  pillar: burn
+  group: featured
+  people: [chih-jung-huang]
+  status: Ongoing · public demo
+  description: Deep-supervision UNet++ that outlines burn wounds on clinical photographs, as a first step toward objective TBSA and depth assessment.
+  tags: [burn, segmentation, deep-learning]
+
+- title: Inhalation injury prediction
+  image: images/tiles/inhalation.svg
+  pillar: burn
+  group: featured
+  people: [chih-jung-huang, wei-chun-chen, i-fang-chung, ying-jia-lin]
+  status: Ongoing
+  description: Machine-learning prediction of inhalation injury from admission data (Burns, 2023), now extended to multimodal deep learning.
+  tags: [burn, machine-learning, multimodal]
+
+- title: Burn outcomes from CGRD
+  image: images/tiles/cgrd.svg
+  pillar: burn
+  group: featured
+  people: [chih-jung-huang]
+  status: Ongoing
+  description: Outcome research on the Chang Gung Research Database — transfusion strategy, infection, length of stay and reconstructive burden — with rule-based NLP for extracting injury details from clinical notes.
+  tags: [burn, big-data, nlp]
+
+- title: Quantitative rhinoplasty
+  image: images/tiles/rhinoplasty.svg
+  pillar: face
+  group: featured
+  people: [chih-jung-huang]
+  status: Ongoing
+  description: Landmark-based measurement of pre- and post-operative nasal form, with reliability-tested annotation tools, for reproducible aesthetic evaluation and outcome prediction.
+  tags: [rhinoplasty, landmarks, measurement]
+
+- title: Orthognathic bad-split prediction
+  image: images/tiles/orthognathic.svg
+  pillar: face
+  group: featured
+  people: [chih-jung-huang]
+  status: Ongoing · NSTC-funded
+  description: CBCT and 3D-imaging models for predicting unfavorable fractures (bad splits) in sagittal split osteotomy, supporting orthognathic surgical planning.
+  tags: [craniofacial, cbct, deep-learning]
+
+- title: Flap perfusion AI
+  image: images/tiles/flap.svg
+  link: https://huggingface.co/spaces/CJRonald/flap-prediction-demo
+  pillar: micro
+  group: featured
+  people: [chih-jung-huang]
+  status: Ongoing · public demo
+  description: Image-based assessment of free-flap circulation, from ICG fluorescence perfusion segmentation to a ResNet18 model that classifies flap status from a region of interest.
+  tags: [microsurgery, perfusion, deep-learning]

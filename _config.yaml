@@ -1,0 +1,86 @@
+# site properties and page defaults
+title: VDI Lab
+subtitle: Visual-Driven Intelligence Lab · CGMH Burn Center
+description: Clinical AI and quantitative imaging research across burn care, rhinoplasty, craniofacial and microsurgical reconstruction at Chang Gung Memorial Hospital, Linkou.
+header: images/background.svg
+footer: images/background.svg
+proofer: false
+url: https://lab.cjhuang.com
+
+# site social media and other links
+links:
+  email: contact@cjhuang.com
+  google-scholar: o5hHtnQAAAAJ
+  home-page: https://cjhuang.com
+
+### jekyll settings
+
+# front matter defaults
+defaults:
+  # unlisted research tools: keep out of sitemap (robots.txt also disallows /tools/)
+  - scope:
+      path: "tools"
+    values:
+      sitemap: false
+  # all markdown files
+  - scope:
+      path: ""
+    values:
+      layout: default
+  # markdown files in /_members
+  - scope:
+      type: "members"
+    values:
+      layout: member
+  # markdown files in /_posts
+  - scope:
+      type: "posts"
+    values:
+      layout: post
+
+collections:
+  # generate page for each member
+  members:
+    output: true
+  # generate page for each post
+  posts:
+    output: true
+
+# jekyll plugins
+plugins:
+  - jekyll-spaceship
+  - jekyll-sitemap
+  - jekyll-redirect-from
+  - jekyll-feed
+  - jekyll-last-modified-at
+
+# code block syntax highlighting
+highlighter: rouge
+
+# jekyll theme
+theme: null
+
+# sass settings
+sass:
+  sass_dir: _styles
+
+# force jekyll to include certain files/folders
+include:
+  - _styles
+  - _scripts
+
+# force jekyll to exclude certain files/folders
+exclude:
+  - README.md
+  - LICENSE
+  - brand
+  - Gemfile
+  - Gemfile.lock
+  - _cite
+  - tools/landmark/landmark_checklist.md
+
+# configure jekyll spaceship
+jekyll-spaceship:
+  mathjax-processor:
+    src:
+      - https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js

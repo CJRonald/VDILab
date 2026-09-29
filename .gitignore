@@ -34,3 +34,18 @@ build/
 # Temporary files
 *.tmp
 *.temp
+
+# Jekyll / Lab Website Template
+_site
+.sass-cache
+.jekyll-cache
+.jekyll-metadata
+vendor
+debug.log
+__pycache__
+.DS_STORE
+.env*
+package.json
+package-lock.json
+yarn.lock
+node_modules

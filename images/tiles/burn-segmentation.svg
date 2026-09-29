@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0B2545"/><stop offset="1" stop-color="#00685f"/></linearGradient></defs>
+  <rect width="800" height="500" fill="url(#g)"/>
+  <g transform="translate(560 60) scale(1.6)" fill="none" stroke="#FFFFFF" stroke-opacity="0.25" stroke-width="2">
+    <path d="M100 30 L160.6 65 L160.6 135 L100 170 L39.4 135 L39.4 65 Z"/>
+    <path d="M100 30 L160.6 135 L39.4 135 Z"/><path d="M160.6 65 L100 170 L39.4 65 Z" stroke="#00A39A" stroke-opacity="0.6"/>
+  </g>
+  <text x="56" y="360" font-family="Inter, Helvetica, Arial, sans-serif" font-size="54" font-weight="600" fill="#FFFFFF">Burn wound</text>
+  <text x="56" y="424" font-family="Inter, Helvetica, Arial, sans-serif" font-size="54" font-weight="300" fill="#7fd6cf">segmentation</text>
+</svg>

@@ -1,4 +1,7 @@
 ---
+# old single-page site URLs
+redirect_from:
+  - /index-en.html
 ---
 
 # Visual-Driven Intelligence for Surgery

@@ -18,6 +18,10 @@ resident:
   icon: fa-solid fa-stethoscope
   description: Resident Researcher
 
+research-assistant:
+  icon: fa-solid fa-flask
+  description: Research Assistant
+
 masters:
   icon: fa-solid fa-user-graduate
   description: Master's Student

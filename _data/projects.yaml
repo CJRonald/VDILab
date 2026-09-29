@@ -43,7 +43,7 @@
   image: images/tiles/orthognathic.svg
   pillar: face
   group: featured
-  people: [chih-jung-huang, pin-ru-chen, pang-yun-chou]
+  people: [chih-jung-huang, pin-ru-chen, pang-yun-chou, pei-chen-huang]
   status: Ongoing · NSTC-funded
   description: CBCT and 3D-imaging models for predicting unfavorable fractures (bad splits) in sagittal split osteotomy, supporting orthognathic surgical planning.
   tags: [craniofacial, cbct, deep-learning]

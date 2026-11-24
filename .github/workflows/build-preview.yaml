@@ -10,7 +10,8 @@ permissions:
 
 jobs:
   build-preview:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest (26.04) compiler rejects posix-spawn 0.3.15 in Gemfile.lock
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout PR branch contents
